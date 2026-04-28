@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SISTEMA EXP — GUITARRA</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@200;300;400;600&family=Barlow:wght@300;400&display=swap');
+
+:root {
+  --bg:      #090a0c;
+  --panel:   #0e1013;
+  --border:  #1e2228;
+  --border2: #2e343e;
+  --dim:     #36404e;
+  --mid:     #5e6e80;
+  --main:    #96aabe;
+  --hi:      #ccdaeb;
+  --danger:  #b03028;
+  --warn:    #986018;
+  --green:   #287040;
+  --scan:    rgba(140,170,200,0.02);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { width:100%; height:100%; background:var(--bg); color:var(--main); font-family:'Barlow',sans-serif; overflow:hidden; }
+
+body::before {
+  content:''; position:fixed; inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,var(--scan) 3px,var(--scan) 4px);
+  pointer-events:none; z-index:1000;
+}
+
+/* LAYOUT */
+#layout {
+  display:grid;
+  grid-template-rows:46px 1fr 155px;
+  grid-template-columns:185px 1fr 210px;
+  width:100vw; height:100vh;
+}
+
+/* HEADER */
+header {
+  grid-column:1/-1; grid-row:1;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 16px;
+  background:var(--panel);
+  border-bottom:1px solid var(--border);
+}
+.h-logo { display:flex; align-items:center; gap:10px; flex-shrink:0; }
+.atom {
+  width:24px; height:24px; border:1.5px solid var(--mid);
+  border-radius:50%; display:flex; align-items:center; justify-content:center; position:relative;
+}
+.atom::before { content:''; width:7px; height:7px; border-radius:50%; background:var(--mid); }
+.atom::after  { content:''; position:absolute; width:3px; height:3px; border-radius:50%; background:var(--bg); }
+.h-id { font-family:'Share Tech Mono',monospace; font-size:9px; letter-spacing:0.12em; color:var(--dim); }
+.h-id span { color:var(--mid); }
+
+.h-ticker { flex:1; overflow:hidden; margin:0 20px; }
+.ticker-inner {
+  font-family:'Share Tech Mono',monospace; font-size:8px; letter-spacing:0.1em;
+  color:var(--dim); white-space:nowrap; display:inline-block;
+  animation:tick 40s linear infinite;
+}
+@keyframes tick { from{transform:translateX(80vw)} to{transform:translateX(-100%)} }
+
+.h-right { display:flex; align-items:center; gap:16px; flex-shrink:0; }
+.status-pill { display:flex; align-items:center; gap:5px; font-family:'Share Tech Mono',monospace; font-size:8px; letter-spacing:0.1em; color:var(--dim); }
+.dot { width:5px; height:5px; border-radius:50%; background:var(--green); animation:blink 2.5s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+#clock { font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:0.1em; color:var(--mid); }
+
+/* LEFT */
+#left {
+  grid-column:1; grid-row:2;
+  background:var(--panel); border-right:1px solid var(--border);
+  padding:16px 12px; display:flex; flex-direction:column; gap:16px; overflow:hidden;
+}
+
+/* MAIN */
+#main {
+  grid-column:2; grid-row:2;
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
+  padding:28px 36px; position:relative; overflow:hidden;
+}
+.br-tl,.br-tr,.br-bl,.br-br { position:absolute; width:32px; height:32px; border-color:var(--border2); border-style:solid; }
+.br-tl{top:14px;left:14px;border-width:1px 0 0 1px} .br-tr{top:14px;right:14px;border-width:1px 1px 0 0}
+.br-bl{bottom:14px;left:14px;border-width:0 0 1px 1px} .br-br{bottom:14px;right:14px;border-width:0 1px 1px 0}
+
+#instr-label { font-family:'Share Tech Mono',monospace; font-size:8px; letter-spacing:0.3em; color:var(--dim); text-transform:uppercase; margin-bottom:22px; text-align:center; }
+
+#instr-text {
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:62px; font-weight:300; line-height:1.15; letter-spacing:0.01em;
+  color:var(--hi); max-width:760px; margin:0 auto;
+  text-align:center; transition:opacity 0.35s ease;
+  min-height:130px; display:flex; align-items:center; justify-content:center;
+}
+#instr-text.idle  { color:var(--dim); font-size:22px; letter-spacing:0.2em; font-weight:200; }
+#instr-text.loading { opacity:0.15; }
+
+#nivel-bar { margin-top:28px; width:100%; max-width:520px; }
+.nbar-meta {
+  display:flex; justify-content:space-between;
+  font-family:'Share Tech Mono',monospace; font-size:8px; letter-spacing:0.18em; color:var(--dim); margin-bottom:7px;
+}
+#nbar-track { height:1px; background:var(--border); }
+#nbar-fill { height:100%; width:0%; background:var(--mid); transition:width 0.9s cubic-bezier(0.4,0,0.2,1), background 0.7s ease; }
+#nbar-name { font-family:'Share Tech Mono',monospace; font-size:8px; letter-spacing:0.2em; color:var(--dim); text-align:center; margin-top:6px; text-transform:uppercase; }
+
+/* RIGHT */
+#right {
+  grid-column:3; grid-row:2;
+  background:var(--panel); border-left:1px solid var(--border);
+  padding:16px 12px; display:flex; flex-direction:column; gap:16px; overflow:hidden;
+}
+
+/* BOTTOM */
+footer {
+  grid-column:1/-1; grid-row:3;
+  background:var(--panel); border-top:1px solid var(--border);
+  display:grid; grid-template-columns:185px 1fr 210px;
+}
+#bot-left  { border-right:1px solid var(--border); padding:12px; display:flex; flex-direction:column; gap:5px; overflow:hidden; }
+#bot-center { padding:12px 22px; display:flex; flex-direction:column; justify-content:center; gap:9px; }
+#bot-right { border-left:1px solid var(--border); padding:12px; display:flex; flex-direction:column; justify-content:center; gap:6px; }
+
+/* WIDGET LABEL */
+.wlabel {
+  font-family:'Share Tech Mono',monospace; font-size:7px; letter-spacing:0.22em;
+  color:var(--dim); text-transform:uppercase; margin-bottom:8px;
+  display:flex; align-items:center; gap:8px;
+}
+.wlabel::after { content:''; flex:1; height:1px; background:var(--border); }
+
+/* METERS */
+.meter { display:flex; align-items:center; gap:7px; margin-bottom:4px; }
+.mname { font-family:'Share Tech Mono',monospace; font-size:7px; color:var(--dim); width:55px; letter-spacing:0.05em; flex-shrink:0; }
+.mtrack { flex:1; height:2px; background:var(--border); }
+.mfill  { height:100%; background:var(--dim); transition:width 1.2s ease; }
+.mval   { font-family:'Share Tech Mono',monospace; font-size:7px; color:var(--dim); width:24px; text-align:right; }
+
+/* TACHOS */
+#tachos { display:grid; grid-template-columns:1fr 1fr; gap:5px; }
+.tacho  { border:1px solid var(--border); padding:7px 5px; display:flex; flex-direction:column; align-items:center; gap:4px; transition:border-color 0.7s ease; }
+.tacho-id   { font-family:'Share Tech Mono',monospace; font-size:7px; color:var(--dim); letter-spacing:0.1em; }
+.tacho-bulb { width:16px; height:16px; border-radius:50%; background:var(--border); transition:background 0.7s ease, box-shadow 0.7s ease; }
+.tacho-name { font-family:'Share Tech Mono',monospace; font-size:7px; color:var(--dim); letter-spacing:0.05em; text-transform:uppercase; text-align:center; transition:color 0.7s ease; }
+
+#prog-label { font-family:'Share Tech Mono',monospace; font-size:8px; color:var(--mid); letter-spacing:0.08em; text-transform:uppercase; margin-top:4px; }
+#lights-desc { font-size:9px; line-height:1.5; color:var(--dim); font-style:italic; margin-top:2px; }
+
+/* NIVEL BIG */
+#nivel-big { display:flex; align-items:baseline; gap:9px; }
+#nivel-num  { font-family:'Share Tech Mono',monospace; font-size:38px; color:var(--mid); line-height:1; transition:color 0.7s ease; }
+#nivel-word { font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:300; letter-spacing:0.2em; color:var(--dim); text-transform:uppercase; }
+
+/* LOG */
+#log { flex:1; overflow:hidden; }
+.logline { font-family:'Share Tech Mono',monospace; font-size:7px; color:var(--dim); letter-spacing:0.04em; line-height:2; opacity:0; animation:fadein 0.3s ease forwards; }
+@keyframes fadein { from{opacity:0;transform:translateX(-3px)} to{opacity:1;transform:none} }
+
+/* HISTORIAL */
+.hentry { padding:5px 0; border-bottom:1px solid var(--border); animation:fadein 0.3s ease forwards; }
+.hnum  { font-family:'Share Tech Mono',monospace; font-size:7px; color:var(--dim); letter-spacing:0.1em; margin-bottom:2px; }
+.htext { font-size:9px; color:var(--mid); line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+
+/* BOTONES */
+.btns { display:flex; gap:9px; }
+.btn {
+  flex:1; height:44px; border:1px solid var(--border2); background:transparent;
+  cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:9px;
+  letter-spacing:0.12em; text-transform:uppercase; color:var(--mid); transition:all 0.15s;
+}
+.btn:hover:not(:disabled) { border-color:var(--mid); color:var(--hi); background:rgba(150,170,190,0.04); }
+.btn:active:not(:disabled) { transform:scale(0.99); }
+.btn:disabled { opacity:0.2; cursor:not-allowed; }
+.btn-rad { border-color:var(--danger); color:#c05848; }
+.btn-rad:hover:not(:disabled) { border-color:#cc3828; color:#d87060; background:rgba(180,48,40,0.05); }
+
+#status-msg { font-family:'Share Tech Mono',monospace; font-size:7px; letter-spacing:0.18em; color:var(--dim); text-align:center; text-transform:uppercase; }
+#counter-num { font-family:'Share Tech Mono',monospace; font-size:30px; color:var(--mid); line-height:1; }
+.counter-lbl { font-family:'Share Tech Mono',monospace; font-size:7px; color:var(--dim); letter-spacing:0.1em; }
+
+/* STROBO */
+#strobo-overlay { position:fixed; inset:0; background:white; display:none; z-index:2000; pointer-events:none; }
+
+/* GENERATING RING */
+@keyframes rpulse { 0%{transform:scale(1);opacity:0.5} 100%{transform:scale(1.015);opacity:0} }
+.rring { position:absolute; inset:28px; border:1px solid var(--border2); animation:rpulse 1.1s ease-out infinite; pointer-events:none; }
+
+/* API KEY MODAL */
+#apimodal {
+  position:fixed; inset:0; background:rgba(0,0,0,0.85);
+  display:flex; align-items:center; justify-content:center; z-index:3000;
+}
+#apibox {
+  background:var(--panel); border:1px solid var(--border2);
+  padding:28px 32px; max-width:420px; width:90%;
+}
+#apibox h2 { font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:0.2em; color:var(--mid); text-transform:uppercase; margin-bottom:14px; }
+#apibox p  { font-size:12px; color:var(--dim); line-height:1.7; margin-bottom:16px; }
+#apibox a  { color:var(--mid); }
+#api-input {
+  width:100%; background:var(--bg); border:1px solid var(--border2);
+  color:var(--hi); font-family:'Share Tech Mono',monospace; font-size:11px;
+  padding:10px 12px; letter-spacing:0.05em; margin-bottom:12px;
+  outline:none;
+}
+#api-input:focus { border-color:var(--mid); }
+#api-btn {
+  width:100%; height:40px; background:transparent; border:1px solid var(--border2);
+  cursor:pointer; font-family:'Share Tech Mono',monospace; font-size:10px;
+  letter-spacing:0.15em; color:var(--mid); text-transform:uppercase; transition:all 0.15s;
+}
+#api-btn:hover { border-color:var(--mid); color:var(--hi); }
+#api-err { font-family:'Share Tech Mono',monospace; font-size:9px; color:var(--danger); letter-spacing:0.08em; display:none; margin-top:8px; }
+</style>
+</head>
+<body>
+
+<!-- STROBO -->
+<div id="strobo-overlay"></div>
+
+<!-- API KEY MODAL -->
+<div id="apimodal">
+  <div id="apibox">
+    <h2>// CLAVE DE ACCESO //</h2>
+    <p>Para generar instrucciones necesitás una API key de Anthropic.<br>
+    Conseguila gratis en <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys → Create Key.<br><br>
+    La clave queda guardada solo en tu navegador.</p>
+    <input id="api-input" type="password" placeholder="sk-ant-..." spellcheck="false" />
+    <button id="api-btn" onclick="saveKey()">[ INGRESAR Y CONTINUAR ]</button>
+    <div id="api-err">CLAVE INVÁLIDA — VERIFICÁ E INTENTÁ DE NUEVO</div>
+  </div>
+</div>
+
+<!-- PANEL -->
+<div id="layout">
+
+  <header>
+    <div class="h-logo">
+      <div class="atom"></div>
+      <div class="h-id">SIS-<span>EXP</span> // GTR // <span>V2.0</span></div>
+    </div>
+    <div class="h-ticker">
+      <span class="ticker-inner">SISTEMA DE INSTRUCCIÓN EXPERIMENTAL — GUITARRA CLÁSICA — PERFORMANCE EN VIVO — 09.05 — MÓDULO DE CONTROL ACTIVO — AGUARDANDO ORDEN — &nbsp;&nbsp;&nbsp;&nbsp; SISTEMA DE INSTRUCCIÓN EXPERIMENTAL — GUITARRA CLÁSICA — PERFORMANCE EN VIVO —</span>
+    </div>
+    <div class="h-right">
+      <div class="status-pill"><div class="dot"></div>ONLINE</div>
+      <div id="clock">00:00:00</div>
+    </div>
+  </header>
+
+  <aside id="left">
+    <div>
+      <div class="wlabel">LOG DEL SISTEMA</div>
+      <div id="log"></div>
+    </div>
+    <div>
+      <div class="wlabel">PARÁMETROS</div>
+      <div class="meter"><div class="mname">TENSIÓN</div><div class="mtrack"><div class="mfill" id="m0" style="width:10%"></div></div><div class="mval" id="mv0">10</div></div>
+      <div class="meter"><div class="mname">ENTROPÍA</div><div class="mtrack"><div class="mfill" id="m1" style="width:7%"></div></div><div class="mval" id="mv1">07</div></div>
+      <div class="meter"><div class="mname">DISTORSIÓN</div><div class="mtrack"><div class="mfill" id="m2" style="width:4%"></div></div><div class="mval" id="mv2">04</div></div>
+      <div class="meter"><div class="mname">RUPTURA</div><div class="mtrack"><div class="mfill" id="m3" style="width:0%"></div></div><div class="mval" id="mv3">00</div></div>
+    </div>
+  </aside>
+
+  <main id="main">
+    <div class="br-tl"></div><div class="br-tr"></div>
+    <div class="br-bl"></div><div class="br-br"></div>
+    <div style="width:100%;text-align:center;">
+      <div id="instr-label">// INSTRUCCIÓN ACTIVA //</div>
+      <div id="instr-text" class="idle">SISTEMA EN ESPERA</div>
+      <div id="nivel-bar">
+        <div class="nbar-meta">
+          <span>NIVEL DE RADICALIDAD</span>
+          <span id="nbar-pct">0 / 5</span>
+        </div>
+        <div id="nbar-track"><div id="nbar-fill"></div></div>
+        <div id="nbar-name">—</div>
+      </div>
+    </div>
+  </main>
+
+  <aside id="right">
+    <div>
+      <div class="wlabel">ILUMINACIÓN</div>
+      <div id="tachos">
+        <div class="tacho" id="tc1"><div class="tacho-id">T-01</div><div class="tacho-bulb" id="tb1"></div><div class="tacho-name" id="tn1">—</div></div>
+        <div class="tacho" id="tc2"><div class="tacho-id">T-02</div><div class="tacho-bulb" id="tb2"></div><div class="tacho-name" id="tn2">—</div></div>
+        <div class="tacho" id="tc3"><div class="tacho-id">T-03</div><div class="tacho-bulb" id="tb3"></div><div class="tacho-name" id="tn3">—</div></div>
+        <div class="tacho" id="tc4"><div class="tacho-id">T-04</div><div class="tacho-bulb" id="tb4"></div><div class="tacho-name" id="tn4">—</div></div>
+      </div>
+      <div id="prog-label"></div>
+      <div id="lights-desc"></div>
+    </div>
+    <div>
+      <div class="wlabel">NIVEL ACTUAL</div>
+      <div id="nivel-big">
+        <div id="nivel-num">0</div>
+        <div id="nivel-word">en espera</div>
+      </div>
+    </div>
+  </aside>
+
+  <footer>
+    <div id="bot-left">
+      <div class="wlabel">SECUENCIA</div>
+      <div id="historial"></div>
+    </div>
+    <div id="bot-center">
+      <div class="btns">
+        <button class="btn" id="btn-new" onclick="generate('new')">[ NUEVA INSTRUCCIÓN ]</button>
+        <button class="btn btn-rad" id="btn-rad" onclick="generate('radical')" disabled>[ MÁS RADICAL ]</button>
+      </div>
+      <div id="status-msg">AGUARDANDO ORDEN</div>
+    </div>
+    <div id="bot-right">
+      <div class="wlabel">CONTADOR</div>
+      <div id="counter-num">00</div>
+      <div class="counter-lbl">INSTRUCCIONES EMITIDAS</div>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+// ── RELOJ
+function tick() {
+  const n=new Date();
+  document.getElementById('clock').textContent=
+    [n.getHours(),n.getMinutes(),n.getSeconds()].map(x=>String(x).padStart(2,'0')).join(':');
+}
+setInterval(tick,1000); tick();
+
+// ── LOG
+const logEl=document.getElementById('log');
+function addLog(msg) {
+  const n=new Date();
+  const t=[n.getHours(),n.getMinutes(),n.getSeconds()].map(x=>String(x).padStart(2,'0')).join(':');
+  const d=document.createElement('div'); d.className='logline';
+  d.textContent='['+t+'] '+msg;
+  logEl.prepend(d);
+  while(logEl.children.length>9) logEl.removeChild(logEl.lastChild);
+}
+['módulo cargado','interfaz activa','sistema de luces conectado','aguardando clave de acceso']
+  .forEach((m,i)=>setTimeout(()=>addLog(m),i*300));
+
+// ── API KEY
+let API_KEY='';
+const saved=localStorage.getItem('gtr_api_key');
+if(saved){ API_KEY=saved; document.getElementById('apimodal').style.display='none'; addLog('clave cargada desde memoria'); }
+
+document.getElementById('api-input').addEventListener('keydown',e=>{ if(e.key==='Enter') saveKey(); });
+
+function saveKey() {
+  const val=document.getElementById('api-input').value.trim();
+  if(!val.startsWith('sk-ant-')||val.length<20){
+    document.getElementById('api-err').style.display='block'; return;
+  }
+  API_KEY=val;
+  localStorage.setItem('gtr_api_key',val);
+  document.getElementById('apimodal').style.display='none';
+  addLog('clave de acceso aceptada');
+}
+
+// ── COLORES TACHOS
+const PAL={
+  rojo:    {bulb:'#a82820',glow:'rgba(168,40,32,0.55)', border:'#601010',text:'#c06050'},
+  azul:    {bulb:'#204898',glow:'rgba(32,72,152,0.55)', border:'#102458',text:'#4878b8'},
+  verde:   {bulb:'#207040',glow:'rgba(32,112,64,0.55)', border:'#0e3820',text:'#40986a'},
+  amarillo:{bulb:'#986018',glow:'rgba(152,96,24,0.55)', border:'#503008',text:'#b88030'},
+  violeta: {bulb:'#583898',glow:'rgba(88,56,152,0.55)', border:'#2c1858',text:'#7858b8'},
+  blanco:  {bulb:'#90a0b0',glow:'rgba(144,160,176,0.55)',border:'#485660',text:'#b8cad8'},
+  apagado: {bulb:'#181c22',glow:'none',                  border:'#141820',text:'#303840'},
+};
+function setTacho(i,color) {
+  const c=PAL[color]||PAL.apagado;
+  document.getElementById('tb'+i).style.background=c.bulb;
+  document.getElementById('tb'+i).style.boxShadow=c.glow!=='none'?'0 0 12px '+c.glow:'none';
+  document.getElementById('tc'+i).style.borderColor=c.border;
+  document.getElementById('tn'+i).style.color=c.text;
+  document.getElementById('tn'+i).textContent=color;
+}
+
+// ── STROBO
+let stroboInt=null;
+function startStrobo(){
+  const ov=document.getElementById('strobo-overlay'); let on=false;
+  stroboInt=setInterval(()=>{ on=!on; ov.style.display=on?'block':'none'; },80);
+}
+function stopStrobo(){
+  if(stroboInt){clearInterval(stroboInt);stroboInt=null;}
+  document.getElementById('strobo-overlay').style.display='none';
+}
+
+// ── 6 PROGRAMACIONES
+const PROGS=[
+  {name:'P1 — CALMA TENSA',   desc:'Foco en el intérprete. Silencio visual.',    t1:'blanco',   t2:'azul',    t3:'apagado', t4:'apagado', strobo:false},
+  {name:'P2 — EXPLORACIÓN',   desc:'El espacio empieza a activarse.',             t1:'blanco',   t2:'verde',   t3:'azul',    t4:'apagado', strobo:false},
+  {name:'P3 — TENSIÓN',       desc:'Calor que se acumula.',                       t1:'amarillo', t2:'azul',    t3:'verde',   t4:'amarillo',strobo:false},
+  {name:'P4 — RUPTURA',       desc:'El foco se rompe. La luz agrede.',            t1:'rojo',     t2:'apagado', t3:'amarillo',t4:'rojo',    strobo:false},
+  {name:'P5 — CAOS',          desc:'Todo en rojo. El espacio colapsa.',           t1:'rojo',     t2:'rojo',    t3:'violeta', t4:'rojo',    strobo:false},
+  {name:'P6 — STROBO TOTAL',  desc:'Destrucción máxima. Luz total.',              t1:'blanco',   t2:'blanco',  t3:'blanco',  t4:'blanco',  strobo:true},
+];
+function applyProg(p){
+  stopStrobo();
+  setTacho(1,p.t1); setTacho(2,p.t2); setTacho(3,p.t3); setTacho(4,p.t4);
+  document.getElementById('prog-label').textContent=p.name;
+  document.getElementById('lights-desc').textContent=p.desc;
+  if(p.strobo) startStrobo();
+}
+function progForLevel(n){ return PROGS[Math.min(n,5)]; }
+
+// ── NIVEL UI
+const NNAMES =['en espera','exploración','tensión','ruptura','destrucción','caos'];
+const NCOLORS=['#36404e','#5e6e80','#7a8898','#a07020','#a83028','#c01808'];
+function updateNivelUI(n){
+  document.getElementById('nbar-fill').style.width=(n/5*100)+'%';
+  document.getElementById('nbar-fill').style.background=NCOLORS[n]||NCOLORS[0];
+  document.getElementById('nbar-pct').textContent=n+' / 5';
+  document.getElementById('nbar-name').textContent=NNAMES[n]||'';
+  document.getElementById('nivel-num').textContent=n;
+  document.getElementById('nivel-num').style.color=NCOLORS[n];
+  document.getElementById('nivel-word').textContent=NNAMES[n]||'';
+}
+
+// ── METERS
+let radicalLevel=0;
+function updateMeters(){
+  const bases=[radicalLevel*15+5,radicalLevel*12+4,radicalLevel*18+2,radicalLevel*20];
+  bases.forEach((b,i)=>{
+    const v=Math.min(Math.round(b+(Math.random()-0.5)*8),99);
+    document.getElementById('m'+i).style.width=v+'%';
+    document.getElementById('mv'+i).textContent=String(v).padStart(2,'0');
+  });
+}
+setInterval(updateMeters,2200);
+
+// ── HISTORIAL
+let history=[], totalCount=0, currentInstruction='', isLoading=false;
+function renderHistory(){
+  const el=document.getElementById('historial'); el.innerHTML='';
+  history.slice(0,5).forEach(h=>{
+    const d=document.createElement('div'); d.className='hentry';
+    d.innerHTML=`<div class="hnum">#${String(h.n).padStart(2,'0')} — NVL ${h.nivel}</div><div class="htext">${h.text}</div>`;
+    el.appendChild(d);
+  });
+}
+
+// ── GENERAR
+const SYS=`Sos un compositor de música experimental. Generás instrucciones para performances en vivo con guitarra clásica acústica.
+Respondés ÚNICAMENTE con JSON válido. Sin texto antes ni después. Sin backticks.
+Estructura exacta: {"instruccion":"texto","nivel_radical":0}
+Nivel 0-1: experimental, ejecutable, sin daño al instrumento.
+Nivel 2-3: técnicas extendidas agresivas, destrucción parcial aceptada.
+Nivel 4-5: destrucción activa, performance visceral, caos total.
+La instrucción es concreta, ejecutable en vivo, poética. Máximo 20 palabras.`;
+
+async function generate(mode){
+  if(isLoading) return;
+  if(!API_KEY){ document.getElementById('apimodal').style.display='flex'; return; }
+  isLoading=true;
+
+  if(mode==='new') radicalLevel=0;
+  else radicalLevel=Math.min(radicalLevel+1,5);
+
+  document.getElementById('btn-new').disabled=true;
+  document.getElementById('btn-rad').disabled=true;
+  document.getElementById('status-msg').textContent='PROCESANDO...';
+
+  const it=document.getElementById('instr-text');
+  it.className='loading'; it.textContent='///';
+
+  const ring=document.createElement('div'); ring.className='rring';
+  document.getElementById('main').appendChild(ring);
+
+  addLog(mode==='new'?'nueva instrucción solicitada':'radicalizando → nivel '+radicalLevel);
+
+  const USR=mode==='new'
+    ?'Instrucción nueva de nivel 0-1 para guitarra clásica. Impredecible y distinta.'
+    :`Instrucción anterior: "${currentInstruction}"\nRadicalizá al nivel ${radicalLevel}/5. Más extrema. Máximo 20 palabras.`;
+
+  try {
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':API_KEY,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,system:SYS,messages:[{role:'user',content:USR}]})
+    });
+
+    const data=await r.json();
+    if(data.error) throw new Error(data.error.message);
+
+    const raw=data.content.map(b=>b.text||'').join('').replace(/```json|```/g,'').trim();
+    const parsed=JSON.parse(raw);
+
+    currentInstruction=parsed.instruccion;
+    radicalLevel=parsed.nivel_radical;
+    totalCount++;
+
+    it.className=''; it.textContent=parsed.instruccion;
+    updateNivelUI(radicalLevel);
+    applyProg(progForLevel(radicalLevel));
+    updateMeters();
+    document.getElementById('counter-num').textContent=String(totalCount).padStart(2,'0');
+    history.unshift({n:totalCount,text:parsed.instruccion,nivel:radicalLevel});
+    renderHistory();
+    addLog('instrucción #'+totalCount+' emitida — nivel '+radicalLevel);
+    document.getElementById('status-msg').textContent='INSTRUCCIÓN ACTIVA — NIVEL '+radicalLevel;
+
+  } catch(e) {
+    it.className='idle'; it.textContent='ERROR — VERIFICÁ LA CLAVE';
+    document.getElementById('status-msg').textContent='ERROR — '+e.message.slice(0,40);
+    addLog('error: '+e.message.slice(0,50));
+  }
+
+  ring.remove();
+  document.getElementById('btn-new').disabled=false;
+  document.getElementById('btn-rad').disabled=false;
+  isLoading=false;
+}
+</script>
+</body>
+</html>
