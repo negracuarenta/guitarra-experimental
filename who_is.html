@@ -225,17 +225,16 @@ let API_KEY='';
 const saved=localStorage.getItem('who_is_v1');
 if(saved){ API_KEY=saved; document.getElementById('apimodal').style.display='none'; }
 document.getElementById('api-input').addEventListener('keydown',e=>{ if(e.key==='Enter') saveKey(); });
-async function saveKey(){
+function saveKey(){
   const val=document.getElementById('api-input').value.trim();
-  if(!val.startsWith('sk-')||val.length<20){ document.getElementById('api-err').style.display='block'; return; }
-  API_KEY=val; localStorage.setItem('who_is_v1',val);
-  document.getElementById('apimodal').style.display='none';
-  await pedirPermisoMic();
-  if(!localStorage.getItem('who_is_el')){
-    document.getElementById('el-modal').style.display='flex';
-  } else {
-    showRegistro();
+  if(!val.startsWith('sk-')||val.length<20){
+    document.getElementById('api-err').style.display='block';
+    return;
   }
+  API_KEY=val;
+  localStorage.setItem('who_is_v1',val);
+  document.getElementById('apimodal').style.display='none';
+  pedirPermisoMic().then(()=>showRegistro());
 }
 
 // ══ MIC PERMISO
@@ -1050,5 +1049,17 @@ async function celebracion30(){
     setTimeout(()=>{ clearInterval(iv); el.style.display='none'; resolve(); },30000);
   });
 }
+// ══ INIT
+async function pedirPermisoMic(){
+  if(!navigator.mediaDevices) return;
+  try{ const s=await navigator.mediaDevices.getUserMedia({audio:true}); s.getTracks().forEach(t=>t.stop()); }catch(e){}
+}
 
-
+if(API_KEY){
+  pedirPermisoMic().then(()=>showRegistro());
+} else {
+  document.getElementById('apimodal').style.display='flex';
+}
+</script>
+</body>
+</html>
