@@ -18,18 +18,18 @@ body{animation:flicker 9s infinite;}
 #layout{display:grid;grid-template-columns:1fr 200px;grid-template-rows:70px 1fr 130px;width:100vw;height:100vh;}
 
 #header{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:0 32px;border-bottom:2px solid var(--border);}
-#header-title{font-size:10px;letter-spacing:0.08em;color:var(--amber);line-height:1.8;}
+#header-title{font-size:16px;letter-spacing:0.06em;color:var(--amber);line-height:1.8;}
 #header-right{font-size:8px;color:var(--amber-dim);text-align:right;line-height:2;}
 #clock{color:var(--amber);}
 
 #main{grid-column:1;grid-row:2;display:flex;flex-direction:column;padding:28px 52px;overflow:hidden;}
 #dialog-box{display:flex;flex-direction:column;justify-content:center;flex:1;overflow:hidden;}
-#dialog-text{font-size:16px;line-height:2.6;color:var(--amber);white-space:pre-wrap;max-width:820px;overflow:hidden;transition:opacity 0.4s ease;}
+#dialog-text{font-size:32px;line-height:2.4;color:var(--amber);white-space:pre-wrap;max-width:820px;overflow:hidden;transition:opacity 0.4s ease;}
 #cursor{display:inline-block;width:12px;height:18px;background:var(--amber);animation:blink 0.65s step-end infinite;vertical-align:middle;margin-left:3px;}
 
 #tarjeta-box{display:none;flex-direction:column;justify-content:center;gap:16px;flex:1;overflow:hidden;}
 #tarjeta-fase{font-size:8px;color:var(--amber-dim);letter-spacing:0.25em;}
-#tarjeta-texto{font-size:18px;line-height:2.3;color:var(--amber-bright);max-width:820px;overflow:hidden;}
+#tarjeta-texto{font-size:36px;line-height:2.2;color:var(--amber-bright);max-width:820px;overflow:hidden;}
 #tarjeta-progreso{font-size:8px;color:var(--amber-dim);letter-spacing:0.1em;}
 
 #desafio-screen{display:none;position:fixed;inset:0;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;gap:24px;z-index:400;}
