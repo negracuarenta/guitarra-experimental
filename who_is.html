@@ -364,7 +364,7 @@ function initMic(){
         else interim+=e.results[i][0].transcript;
       }
       // Mostrar interim en pantalla para que Martín vea que lo escucha
-      if(interim) setStatus('escuchando: '+interim.slice(-40));
+      if(interim) setStatus('🎤 '+interim.slice(-50));
       if(final.trim() && micCallback){
         const txt=final.trim();
         // Esperar 1.5s por si sigue hablando
@@ -372,10 +372,10 @@ function initMic(){
         micTimer=setTimeout(()=>{
           if(micCallback){
             const cb=micCallback; micCallback=null;
-            setStatus('...');
+            setStatus('procesando...');
             cb(txt);
           }
-        },1500);
+        },600);
       }
     };
 
@@ -825,7 +825,7 @@ async function hacerPregunta(ctx){
 }
 
 async function procesarRespuesta(resp){
-  setBtns(''); setStatus('...');
+  setBtns(''); setStatus('pensando...');
   if(preguntasRonda>=2){
     await sleep(900);
     try{ const c=await callConductora(playerNombre+' respondió: "'+resp+'". Cerrá con humor cordial en 1 oración. Luego preguntá si está listo para el desafío.'); await showText(c); }
