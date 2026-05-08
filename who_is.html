@@ -395,7 +395,7 @@ function initMic(){
   }
 
   recognition=crearRecognition();
-  try{ recognition.start(); }catch(e){}
+  try{ recognition.start(); }catch(e){ setTimeout(()=>{ try{ recognition.start(); }catch(e2){} },1000); }
   document.getElementById('voz-ind').textContent='>> ACTIVO';
 }
 let _resolveRespuesta=null;
@@ -755,8 +755,44 @@ async function generarDialogoGuitarra(){
 // ══ FLUJO
 let desafioEnCurso=false, tarjetaActual=null;
 
+async function pedirPermisoConPantalla(){
+  return new Promise(resolve=>{
+    // Mostrar pantalla de permiso
+    showBox('dialog-box');
+    const el=document.getElementById('dialog-text');
+    el.style.opacity='1';
+    el.textContent='Para funcionar necesito acceso al micrófono.';
+    setBtns('<button class="btn btn-yes" onclick="activarMic()">[ ACTIVAR MICRÓFONO ]</button>');
+    setStatus('NECESARIO PARA EL DIÁLOGO');
+    window._micResolve=resolve;
+  });
+}
+
+async function activarMic(){
+  setBtns('');
+  try {
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    stream.getTracks().forEach(t=>t.stop());
+    const el=document.getElementById('dialog-text');
+    el.textContent='Micrófono activado.';
+    await sleep(800);
+    el.textContent='';
+  } catch(e){
+    const el=document.getElementById('dialog-text');
+    el.textContent='Sin micrófono. Podés usar los botones igual.';
+    await sleep(1200);
+    el.textContent='';
+  }
+  if(window._micResolve){ window._micResolve(); window._micResolve=null; }
+}
+
 async function startApp(){
-  initVoz(); initAudio(); initMic(); await sleep(800);
+  initVoz(); initAudio(); await sleep(400);
+
+  // Pedir permiso de micrófono con pantalla explícita
+  await pedirPermisoConPantalla();
+
+  initMic(); await sleep(600);
   setBtns(''); setStatus('...');
 
   // Apertura fija — con pausas entre oraciones
