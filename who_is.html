@@ -18,18 +18,18 @@ body{animation:flicker 9s infinite;}
 #layout{display:grid;grid-template-columns:1fr 200px;grid-template-rows:70px 1fr 130px;width:100vw;height:100vh;}
 
 #header{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:0 32px;border-bottom:2px solid var(--border);}
-#header-title{font-size:16px;letter-spacing:0.06em;color:var(--amber);line-height:1.8;}
+#header-title{font-size:10px;letter-spacing:0.08em;color:var(--amber);line-height:1.8;}
 #header-right{font-size:8px;color:var(--amber-dim);text-align:right;line-height:2;}
 #clock{color:var(--amber);}
 
 #main{grid-column:1;grid-row:2;display:flex;flex-direction:column;padding:28px 52px;overflow:hidden;}
 #dialog-box{display:flex;flex-direction:column;justify-content:center;flex:1;overflow:hidden;}
-#dialog-text{font-size:32px;line-height:2.4;color:var(--amber);white-space:pre-wrap;max-width:820px;overflow:hidden;transition:opacity 0.4s ease;}
+#dialog-text{font-size:16px;line-height:2.6;color:var(--amber);white-space:pre-wrap;max-width:820px;overflow:hidden;transition:opacity 0.4s ease;}
 #cursor{display:inline-block;width:12px;height:18px;background:var(--amber);animation:blink 0.65s step-end infinite;vertical-align:middle;margin-left:3px;}
 
 #tarjeta-box{display:none;flex-direction:column;justify-content:center;gap:16px;flex:1;overflow:hidden;}
 #tarjeta-fase{font-size:8px;color:var(--amber-dim);letter-spacing:0.25em;}
-#tarjeta-texto{font-size:36px;line-height:2.2;color:var(--amber-bright);max-width:820px;overflow:hidden;}
+#tarjeta-texto{font-size:18px;line-height:2.3;color:var(--amber-bright);max-width:820px;overflow:hidden;}
 #tarjeta-progreso{font-size:8px;color:var(--amber-dim);letter-spacing:0.1em;}
 
 #desafio-screen{display:none;position:fixed;inset:0;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;gap:24px;z-index:400;}
@@ -37,13 +37,13 @@ body{animation:flicker 9s infinite;}
 #desafio-sub{font-size:11px;color:var(--amber-dim);letter-spacing:0.15em;}
 
 #evaluacion-screen{display:none;position:fixed;inset:0;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;gap:32px;z-index:400;padding:40px;}
-#eval-titulo{font-size:12px;color:var(--amber);letter-spacing:0.1em;text-align:center;line-height:2;}
-#eval-opciones{display:flex;flex-direction:column;gap:16px;align-items:center;}
+#eval-titulo{font-size:20px;color:var(--amber);letter-spacing:0.1em;text-align:center;line-height:2;}
+#eval-opciones{display:flex;flex-direction:column;gap:32px;align-items:center;}
 .eval-checkbox{display:flex;align-items:center;gap:16px;cursor:pointer;}
-.eval-box{width:24px;height:24px;border:2px solid var(--amber);display:flex;align-items:center;justify-content:center;font-size:14px;transition:all 0.1s;}
+.eval-box{width:56px;height:56px;border:3px solid var(--amber);display:flex;align-items:center;justify-content:center;font-size:32px;transition:all 0.1s;}
 .eval-box.checked{background:var(--amber);color:var(--bg);}
-.eval-label{font-size:9px;letter-spacing:0.1em;color:var(--amber);}
-#eval-btn{padding:14px 24px;border:2px solid var(--green);background:transparent;color:var(--green);font-family:'Press Start 2P',monospace;font-size:9px;cursor:pointer;text-transform:uppercase;letter-spacing:0.1em;margin-top:8px;}
+.eval-label{font-size:18px;letter-spacing:0.1em;color:var(--amber);}
+#eval-btn{padding:22px 36px;border:2px solid var(--green);background:transparent;color:var(--green);font-family:'Press Start 2P',monospace;font-size:16px;cursor:pointer;text-transform:uppercase;letter-spacing:0.1em;margin-top:20px;}
 #eval-btn:hover{background:var(--green);color:var(--bg);}
 
 #aplausos-screen{display:none;position:fixed;inset:0;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;gap:28px;z-index:400;padding:40px;}
@@ -364,7 +364,7 @@ function initMic(){
         else interim+=e.results[i][0].transcript;
       }
       // Mostrar interim en pantalla para que Martín vea que lo escucha
-      if(interim) setStatus('🎤 '+interim.slice(-50));
+      if(interim) setStatus('escuchando: '+interim.slice(-40));
       if(final.trim() && micCallback){
         const txt=final.trim();
         // Esperar 1.5s por si sigue hablando
@@ -372,7 +372,7 @@ function initMic(){
         micTimer=setTimeout(()=>{
           if(micCallback){
             const cb=micCallback; micCallback=null;
-            setStatus('procesando...');
+            setStatus('...');
             cb(txt);
           }
         },600);
@@ -395,7 +395,7 @@ function initMic(){
   }
 
   recognition=crearRecognition();
-  try{ recognition.start(); }catch(e){ setTimeout(()=>{ try{ recognition.start(); }catch(e2){} },1000); }
+  try{ recognition.start(); }catch(e){}
   document.getElementById('voz-ind').textContent='>> ACTIVO';
 }
 let _resolveRespuesta=null;
@@ -447,6 +447,72 @@ function playSound(step){
   if(ch.noise){ const buf=audioCtx.createBuffer(1,audioCtx.sampleRate*2,audioCtx.sampleRate); const d=buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*0.1; const src=audioCtx.createBufferSource(); src.buffer=buf; src.loop=true; const ng=audioCtx.createGain(); ng.gain.value=0.025; src.connect(ng); ng.connect(master); src.start(); currentNodes.push(src); }
   const lbl={sine:'SINE',triangle:'TRI',square:'SQ',sawtooth:'SAW'};
   document.getElementById('sound-ind').textContent='>> '+lbl[ch.wave]+' '+ch.voices+'V'+(ch.noise?'+N':''); document.getElementById('sound-ind').className='sound-on';
+}
+
+// ══ SONIDOS ESPECIALES
+function playFlatline(){
+  initAudio(); stopSounds();
+  const master=audioCtx.createGain(); master.gain.setValueAtTime(0.2,audioCtx.currentTime); master.connect(audioCtx.destination);
+  const osc=audioCtx.createOscillator(); const env=audioCtx.createGain();
+  osc.type='sine'; osc.frequency.setValueAtTime(440,audioCtx.currentTime);
+  env.gain.setValueAtTime(0.8,audioCtx.currentTime);
+  osc.connect(env); env.connect(master); osc.start(); currentNodes.push(osc);
+  document.getElementById('sound-ind').textContent='>> FLATLINE';
+  document.getElementById('sound-ind').className='sound-on';
+}
+
+function playPulso(){
+  initAudio(); stopSounds();
+  const master=audioCtx.createGain(); master.gain.setValueAtTime(0.18,audioCtx.currentTime); master.connect(audioCtx.destination);
+  const sentinel={stop:()=>{}}; currentNodes.push(sentinel);
+  let t=audioCtx.currentTime;
+  for(let i=0;i<20;i++){
+    const o=audioCtx.createOscillator(); const g=audioCtx.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(880,t); o.frequency.setValueAtTime(660,t+0.08);
+    g.gain.setValueAtTime(0.9,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.25);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t+0.3); t+=0.85;
+  }
+  document.getElementById('sound-ind').textContent='>> PULSO';
+  document.getElementById('sound-ind').className='sound-on';
+}
+
+let musicaBaileActiva=false;
+function playMusicaBaile(){
+  initAudio(); stopSounds(); musicaBaileActiva=true;
+  const master=audioCtx.createGain(); master.gain.setValueAtTime(0.15,audioCtx.currentTime); master.connect(audioCtx.destination);
+  const ritmo=[246.94,329.63,220.00,329.63,246.94,196.00,220.00,329.63];
+  let t=audioCtx.currentTime; const beatDur=0.22;
+  function ciclo(){
+    if(!musicaBaileActiva) return;
+    ritmo.forEach((f,i)=>{
+      const o=audioCtx.createOscillator(); const g=audioCtx.createGain();
+      o.type='triangle'; o.frequency.setValueAtTime(f,t+i*beatDur);
+      g.gain.setValueAtTime(0.7,t+i*beatDur); g.gain.exponentialRampToValueAtTime(0.001,t+i*beatDur+beatDur*0.8);
+      o.connect(g); g.connect(master); o.start(t+i*beatDur); o.stop(t+i*beatDur+beatDur);
+    });
+    t+=ritmo.length*beatDur;
+    if(musicaBaileActiva) setTimeout(ciclo,ritmo.length*beatDur*800);
+  }
+  ciclo();
+  document.getElementById('sound-ind').textContent='>> BAILE';
+  document.getElementById('sound-ind').className='sound-on';
+}
+function stopMusicaBaile(){ musicaBaileActiva=false; stopSounds(); }
+
+function playEntreDesafio(n){
+  if(!playerSonido) return; initAudio(); stopSounds();
+  const master=audioCtx.createGain(); master.gain.setValueAtTime(0.06,audioCtx.currentTime); master.connect(audioCtx.destination);
+  const voces=Math.min(2+Math.floor(n/3),5);
+  for(let i=0;i<voces;i++){
+    const osc=audioCtx.createOscillator(); const g=audioCtx.createGain();
+    const f=FELDMAN_POOL[Math.floor(Math.random()*FELDMAN_POOL.length)]*(i===1?2:1);
+    osc.type='sine'; osc.frequency.setValueAtTime(f,audioCtx.currentTime);
+    osc.frequency.setTargetAtTime(FELDMAN_POOL[Math.floor(Math.random()*FELDMAN_POOL.length)]*(i===1?2:1),audioCtx.currentTime+2,4+i);
+    g.gain.setValueAtTime(0,audioCtx.currentTime); g.gain.linearRampToValueAtTime(0.3/voces,audioCtx.currentTime+1.5+i*0.3);
+    osc.connect(g); g.connect(master); osc.start(); currentNodes.push(osc);
+  }
+  document.getElementById('sound-ind').textContent='>> ENTRE DESAFÍO';
+  document.getElementById('sound-ind').className='sound-on';
 }
 
 // ══ FELDMAN FINAL — secuencia completa (dos vueltas)
@@ -617,7 +683,7 @@ function detectarAplausos(dudoso=false){
             hablar(txt,null);
             document.getElementById('aplausos-indicator').textContent='🎤 ESCUCHANDO...';
             setTimeout(()=>{ pasarDesafio(); },4000);
-          },1500);
+          },600);
         } else {
           setTimeout(()=>pasarDesafio(),1500);
         }
@@ -653,88 +719,84 @@ function getSysTarjeta(){
 function getSecuenciaFija(n){
   const fijas={
     1:[
-      {texto:'Inhalá profundamente. Tocá algo que nos recuerde a que alguna vez hubo un lenguaje musical.',pausa:25},
-      {texto:'Inhalá de nuevo. Tocá algo que nos recuerde a que alguna vez hubo un lenguaje musical.',pausa:25},
-      {texto:'Inhalá. Ahora improvisá.',pausa:30},
-      {texto:'Cuando exhalés, dejá caer la guitarra.',pausa:8},
-      {texto:'Gritá.',pausa:10},
-      {texto:'',pausa:10,silencioMusica:true},
+      {texto:'Inhalá. Tocá algo que recuerde a un lenguaje musical perdido. Sin respirar. Cuando exhalés, silencio.',pausa:22},
+      {texto:'Repetí la acción.',pausa:22},
+      {texto:'Hacelo de nuevo, pero improvisá.',pausa:28},
+      {texto:'Inhalá y dejá caer la guitarra.',pausa:8},
+      {texto:'Gritá.',pausa:10,cortarMusica:true},
     ],
     2:[
       {texto:'Metá la boca en la guitarra. Gritá. Mandá mensajes a los ríos y mares.',pausa:35},
       {texto:'Silbato gorrión. Luego silbato bandada.',pausa:20},
-      {texto:'Apoyá la guitarra. Limpiala con un trapo húmedo. Secala con cuidado.',pausa:30},
-      {texto:'Cuando termines, tocá el final de una canción para los ríos.',pausa:50},
-      {texto:'Gracias.',pausa:3},
-      {texto:'Silencio.',pausa:5},
+      {texto:'Apoyá la guitarra. Limpiala con un trapo húmedo. Secala.',pausa:30},
+      {texto:'Tocá el final de una canción para los ríos. Silbato de pájaro de agua.',pausa:50},
+      {texto:'Gracias. Silencio.',pausa:5,cortarMusica:true},
     ],
     3:[
       {texto:'Apoyá la guitarra en la mesa.',pausa:8},
-      {texto:'Silbato búho.',pausa:12},
-      {texto:'Silbato cucú.',pausa:12},
-      {texto:'Silbato golondrina.',pausa:12},
-      {texto:'Tirá una pluma dentro de la guitarra.',pausa:15},
-      {texto:'Decí dentro de la guitarra el nombre de un pájaro que querés recordar.',pausa:20},
-      {texto:'Tomá la guitarra. Tocá el gesto del viento.',pausa:20},
-      {texto:'FIN.',pausa:5,grito:true},
+      {texto:'Hacé sonar el silbato búho dentro de la boca de la guitarra.',pausa:15},
+      {texto:'Ahora el silbato cucú, también dentro de la guitarra.',pausa:15},
+      {texto:'Ahora el silbato golondrina, dentro de la guitarra.',pausa:15},
+      {texto:'Tirá una pluma dentro de la guitarra.',pausa:12},
+      {texto:'Decí dentro de la guitarra el nombre de un pájaro que querés recordar.',pausa:18,cortarMusica:true},
+      {texto:'Tomá la guitarra. Tocá el gesto del viento.',pausa:22},
+      {texto:'Fin.',pausa:3,cortarMusica:true},
     ],
     4:[
       {texto:'Apoyá la guitarra en la mesa.',pausa:8},
-      {texto:'Desatornillá el clavijero. No toques. Porque no podés.',pausa:25},
+      {texto:'Desatornillá el clavijero.',pausa:25},
       {texto:'Mientras desatornillás, cantá una melodía antigua.',pausa:35},
       {texto:'Mirá cómo quedó la guitarra. Pensá en lo que estás haciendo.',pausa:20},
       {texto:'Cuando termines, tocá un silbato agudo.',pausa:15},
-      {texto:'Repará la guitarra. Tocá ataques politímbricos usando el clavijero.',pausa:35},
+      {texto:'Tocá ataques politímbricos: usá los sonidos detrás del clavijero y detrás del puente.',pausa:35},
     ],
     5:[
-      {texto:'Frotar la guitarra contra el suelo en círculos.',pausa:20},
-      {texto:'No dejes de arrastrarla en círculos.',pausa:5,dialogo:true},
-      {texto:'Detente. Pensá si dañaste el instrumento.',pausa:15},
-      {texto:'Respondele algo a la guitarra mientras tocás el silbato pato.',pausa:25},
-      {texto:'Limpiá la guitarra con cuidado.',pausa:20},
+      {texto:'Frotar la guitarra contra el suelo en círculos.',pausa:20,cortarMusica:true},
+      {texto:'Escuchá a la guitarra. Ella tiene ideas. Traducíselas al público.',pausa:40,dialogo:true,cortarMusica:true},
+      {texto:'Detente. Sentate. Dale un final musical a los pensamientos de la guitarra.',pausa:35},
+      {texto:'Silbato pato.',pausa:15},
     ],
     6:[
       {texto:'Apoyá la guitarra en la mesa.',pausa:8},
       {texto:'Vertí agua dentro de la guitarra. Despacio.',pausa:25},
-      {texto:'Hacé que escuchemos el agua.',pausa:30},
+      {texto:'Hacé que escuchemos el agua.',pausa:35},
       {texto:'Caminá por el espacio mientras tocás. El agua se mueve adentro.',pausa:45},
-      {texto:'Susurrále al agua sobre la ley de glaciares, el Ártico, el río Colorado. Silencio del instrumento.',pausa:35},
+      {texto:'Susurrále al agua sobre la ley de glaciares, el Ártico, el río Colorado.',pausa:35,cortarMusica:true},
       {texto:'Silbato gaviota. Largo.',pausa:20},
-      {texto:'Incliná la guitarra. Que el agua busque otro lugar.',pausa:30},
+      {texto:'Incliná la guitarra. Que el agua busque otro lugar.',pausa:30,cortarMusica:true},
     ],
     7:[
-      {texto:'Desagotá el agua. Despacio.',pausa:20},
-      {texto:'Pegale los piezos eléctricos. Generá un patrón rítmico.',pausa:45},
-      {texto:'Bailá.',pausa:30},
-      {texto:'Hacele RCP a la guitarra.',pausa:25},
-      {texto:'Asustate.',pausa:5,grito:true,textoGrito:'Martín, más fuerte. La guitarra se muere.'},
-      {texto:'',pausa:8,silencioMusica:true},
-      {texto:'La guitarra resucitó.',pausa:5},
-      {texto:'Silbato ruiseñor.',pausa:20},
+      {texto:'Desagotá el agua. Despacio.',pausa:35,sinSonidos:true},
+      {texto:'Pegale los piezos eléctricos. Generá un patrón rítmico.',pausa:55,sinSonidos:true},
+      {texto:'Bailá.',pausa:40,sinSonidos:true},
+      {texto:'Hacele RCP a la guitarra.',pausa:25,sinSonidos:true,flatline:true},
+      {texto:'Martín, más fuerte. La guitarra se muere.',pausa:8,sinSonidos:true,cortarTodo:true},
+      {texto:'La guitarra resucitó.',pausa:5,sinSonidos:true,pulso:true},
+      {texto:'Silbato ruiseñor.',pausa:25,sinSonidos:true},
     ],
     8:[
       {texto:'Tomá la sierra. Cortá un pedazo de la guitarra.',pausa:40},
       {texto:'Cantá mientras cortás.',pausa:40},
-      {texto:'Sacá una cuerda.',pausa:60},
+      {texto:'Sacá una cuerda.',pausa:60,cortarMusica:true},
       {texto:'Golpeate con la cuerda.',pausa:40},
       {texto:'Lo siento. Es un desafío ruin.',pausa:10},
     ],
     9:[
-      {texto:'Rociá el mástil con bencina. Con elegancia. Como si prepararas un martini.',pausa:20},
-      {texto:'Llená la guitarra con hielo. Despacio. Con el mismo cuidado.',pausa:25},
-      {texto:'Percutí los hielos en el interior.',pausa:30},
-      {texto:'Improvisá pasos de salsa mientras percutís.',pausa:25},
-      {texto:'Tararéa lo que entiendas que significa música latina.',pausa:30},
-      {texto:'Silbato tordo. Tres veces.',pausa:15},
+      {texto:'Rociá el mástil con bencina. Con elegancia. Como si prepararas un martini.',pausa:15},
+      {texto:'Prendé el mástil.',pausa:5,cortarMusica:true},
+      {texto:'Mirá el fuego con cuidado. Esperá a que se rompan las cuerdas.',pausa:40},
+      {texto:'Apagá el fuego.',pausa:10},
+      {texto:'Buscale un nuevo uso a la guitarra. Si no encontrás nada interesante, bailá.',pausa:10},
+      {texto:'Por las dudas, te dejo una música.',pausa:0,musicaBaile:true},
     ],
     10:[
       {texto:'Atate la guitarra al cuerpo con cinta. Que no puedas soltarla.',pausa:25},
       {texto:'Tocá, o intentá, con ella atada.',pausa:35},
-      {texto:'Tené una charla íntima con la guitarra. Hablá por ella.',pausa:45},
+      {texto:'Tené una charla íntima con la guitarra. Hablá por ella.',pausa:45,cortarMusica:true},
       {texto:'Silbato lechuza. Largo. Sin parar.',pausa:25},
       {texto:'Envolvé la guitarra con toda la cinta que quede.',pausa:30},
       {texto:'De pie. Quieto.',pausa:30},
-      {texto:'I exist as I am, that is enough. Walt Whitman.',pausa:20},
+      {texto:'I exist as I am, that is enough. Walt Whitman.',pausa:20,cortarMusica:true},
     ],
   };
   return fijas[n]||null;
@@ -755,44 +817,8 @@ async function generarDialogoGuitarra(){
 // ══ FLUJO
 let desafioEnCurso=false, tarjetaActual=null;
 
-async function pedirPermisoConPantalla(){
-  return new Promise(resolve=>{
-    // Mostrar pantalla de permiso
-    showBox('dialog-box');
-    const el=document.getElementById('dialog-text');
-    el.style.opacity='1';
-    el.textContent='Para funcionar necesito acceso al micrófono.';
-    setBtns('<button class="btn btn-yes" onclick="activarMic()">[ ACTIVAR MICRÓFONO ]</button>');
-    setStatus('NECESARIO PARA EL DIÁLOGO');
-    window._micResolve=resolve;
-  });
-}
-
-async function activarMic(){
-  setBtns('');
-  try {
-    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
-    stream.getTracks().forEach(t=>t.stop());
-    const el=document.getElementById('dialog-text');
-    el.textContent='Micrófono activado.';
-    await sleep(800);
-    el.textContent='';
-  } catch(e){
-    const el=document.getElementById('dialog-text');
-    el.textContent='Sin micrófono. Podés usar los botones igual.';
-    await sleep(1200);
-    el.textContent='';
-  }
-  if(window._micResolve){ window._micResolve(); window._micResolve=null; }
-}
-
 async function startApp(){
-  initVoz(); initAudio(); await sleep(400);
-
-  // Pedir permiso de micrófono con pantalla explícita
-  await pedirPermisoConPantalla();
-
-  initMic(); await sleep(600);
+  initVoz(); initAudio(); initMic(); await sleep(800);
   setBtns(''); setStatus('...');
 
   // Apertura fija — con pausas entre oraciones
@@ -825,7 +851,7 @@ async function hacerPregunta(ctx){
 }
 
 async function procesarRespuesta(resp){
-  setBtns(''); setStatus('pensando...');
+  setBtns(''); setStatus('...');
   if(preguntasRonda>=2){
     await sleep(900);
     try{ const c=await callConductora(playerNombre+' respondió: "'+resp+'". Cerrá con humor cordial en 1 oración. Luego preguntá si está listo para el desafío.'); await showText(c); }
@@ -906,120 +932,123 @@ async function ejecutarSecuencia(secuencia){
     document.getElementById('tarjeta-fase').textContent='>> '+(i+1)+' / '+secuencia.length+(esUltima?' — CIERRE':'');
     document.getElementById('tarjeta-progreso').textContent='DESAFÍO '+instrCount+' / '+MAX;
 
-    if(item.silencioMusica) stopSounds();
+    // Sonidos especiales
+    if(item.sinSonidos||item.cortarMusica) stopSounds();
+    if(item.cortarTodo){ stopSounds(); detenerVoz(); }
+    if(item.flatline) playFlatline();
+    if(item.pulso) playPulso();
 
-    const textoMostrar=item.textoGrito||item.texto;
-    if(textoMostrar){
+    // Música de baile (desafío 9) — manejo especial
+    if(item.musicaBaile){
+      playMusicaBaile();
+      await sleep(25000);
+      stopMusicaBaile();
+      await sleep(400);
+      const el2=document.getElementById('tarjeta-texto');
+      el2.style.opacity='0'; await sleep(400); el2.textContent='Fin del desafío.'; el2.style.opacity='1';
+      hablar('Fin del desafío.',null);
+      await sleep(3000);
+      desafioEnCurso=false;
+      stopSounds();
+      showBox('dialog-box');
+      try{ const com=await callConductora(playerNombre+' completó el desafío '+instrCount+'/10. Una oración.'); await showText(com); }
+      catch(e){ await showText('Desafío '+instrCount+' completo.'); }
+      mostrarEvaluacion();
+      return;
+    }
+
+    // Mostrar texto
+    if(item.texto){
       const el=document.getElementById('tarjeta-texto');
-      el.style.transition='opacity 0.6s ease'; el.style.opacity='0'; await sleep(700);
-      el.textContent=''; el.style.opacity='1'; await sleep(400);
-      hablar(textoMostrar,null);
-      for(let j=0;j<textoMostrar.length;j++){
-        el.textContent+=textoMostrar[j];
-        const c=textoMostrar[j];
-        await sleep(c==='.'||c==='!'||c==='?'?100:c===','?60:38);
+      el.style.transition='opacity 0.5s ease'; el.style.opacity='0'; await sleep(600);
+      el.textContent=''; el.style.opacity='1'; await sleep(300);
+      hablar(item.texto,null);
+      for(let j=0;j<item.texto.length;j++){
+        el.textContent+=item.texto[j];
+        const c=item.texto[j];
+        await sleep(c==='.'||c==='!'||c==='?'?90:c===','?55:36);
       }
     }
 
+    // Diálogo — la guitarra tiene ideas
     if(item.dialogo){
-      const sits=['La guitarra tiene algo que decirte sobre esta noche. Hablá por ella.','La guitarra opina sobre lo que pasa en el mundo. Vos la expresás.','La guitarra quiere pedirte algo. Vos lo decís.'];
+      await sleep(600);
+      const sits=[
+        'La guitarra tiene ideas sobre cómo mejorar el mundo. Pedile a '+playerNombre+' que las traduzca al público.',
+        'La guitarra opina sobre el estado del arte hoy. Pedile a '+playerNombre+' que sea su vocero.',
+        'La guitarra quiere confesar algo importante. Pedile a '+playerNombre+' que hable por ella.',
+        'La guitarra tiene una teoría sobre el silencio y el ruido. Pedile a '+playerNombre+' que la exponga.',
+      ];
       const sit=sits[Math.floor(Math.random()*sits.length)];
-      try{ const d=await callConductora(sit+' Una oración.'); hablar(d,null); }catch(e){}
+      try{
+        const d=await callConductora(sit+' Una oración directa.');
+        const el=document.getElementById('tarjeta-texto');
+        el.style.opacity='0'; await sleep(400); el.textContent=d; el.style.opacity='1';
+        hablar(d,null);
+      }catch(e){}
     }
 
-    const pausaMs=(item.pausa||15)*1000;
+    const pausaMs=(item.pausa||10)*1000;
     if(esUltima){
       await sleep(pausaMs);
       desafioEnCurso=false;
-      await sleep(600);
+      await sleep(500);
       stopSounds();
-      if(instrCount===8){
-        showBox('dialog-box');
-        try{ const com=await callConductora('Cerrá el desafío 8 con una sola oración. Sin juicio.'); await showText(com); }
-        catch(e){ await showText('Fin del desafío 8.'); }
-        mostrarEvaluacion();
-      } else if(instrCount>=9){
-        await mostrarAplausos('¿El público cree que '+playerNombre+' superó este desafío? Aplaudan si la respuesta es sí.', instrCount===9);
-      } else {
-        showBox('dialog-box');
-        try{ const com=await callConductora(playerNombre+' completó el desafío '+instrCount+'/10. Comentá con humor cálido en 1 oración.'); await showText(com); }
-        catch(e){ await showText('Desafío '+instrCount+' completo.'); }
-        mostrarEvaluacion();
-      }
+      showBox('dialog-box');
+      try{ const com=await callConductora(playerNombre+' completó el desafío '+instrCount+'/10. Comentá con humor cálido en 1 oración.'); await showText(com); }
+      catch(e){ await showText('Desafío '+instrCount+' completo.'); }
+      mostrarEvaluacion();
     } else {
       const inicio=Date.now();
       const iv=setInterval(()=>{ const r=Math.ceil((pausaMs-(Date.now()-inicio))/1000); if(r>0) setStatus(r+'s'); else clearInterval(iv); },1000);
       await sleep(pausaMs); clearInterval(iv);
+      setStatus('...');
     }
   }
 }
 
 async function tarjetaCompleta(){
-  desafioEnCurso=false;
+  desafioEnCurso=false; musicaBaileActiva=false;
+  stopSounds(); detenerVoz();
+
   if(instrCount>=MAX){
-    if(instrCount===10) await playFeldmanYTerminar();
-    else mostrarFin(true);
+    await celebracion30();
+    showBox('dialog-box');
+    try{ const c=await callConductora(playerNombre+' completó los 10 desafíos. Cerrá en 2 oraciones. Sin euforia.'); await showText(c); }
+    catch(e){ await showText('Diez desafíos.\nNadie había llegado a diez.'); }
+    await sleep(2000);
+    playFeldman();
+    await sleep(3000);
+    mostrarFin(true);
     return;
   }
-  playVictoryJingle(); await sleep(2800);
+
+  playVictoryJingle();
+  await sleep(2800);
+  playEntreDesafio(instrCount);
   showBox('dialog-box'); preguntasRonda=0;
-  await sleep(500);
-  try{ const com=await callConductora(playerNombre+' completó el desafío '+instrCount+'/10. Comentá con humor cálido en 1 oración.'); await showText(com); }
-  catch(e){ await showText('Muy bien. Desafío '+instrCount+' completo.'); }
+  await sleep(600);
+  try{ const com=await callConductora(playerNombre+' completó el desafío '+instrCount+'/10. Comentá con humor cálido.'); await showText(com); }
+  catch(e){ await showText('Desafío '+instrCount+' completo.'); }
   await sleep(500);
   await hacerPregunta('entre-desafios');
 }
-
-async function playFeldmanYTerminar(){
-  stopSounds();
-  showBox('dialog-box');
-  try{ const c=await callConductora(playerNombre+' completó los 10 desafíos. Cerrá en 2 oraciones. Sin euforia. Que quede en el aire.'); await showText(c); }
-  catch(e){ await showText('Diez desafíos.\nNadie había llegado a diez.'); }
-  await sleep(2000);
-  playFeldman();
-  await sleep(3000);
-  mostrarFin(true);
-}
-
-async function mostrarFin(gano){
-  desafioEnCurso=false; detenerVoz();
-  const es=document.getElementById('endscreen'); const et=document.getElementById('end-title'); const esub=document.getElementById('end-sub');
-  es.style.display='flex';
-  if(gano){
-    et.style.color='#ffb000'; esub.style.color='#ffb000';
-    const txt='¡¡ GANASTE !!'; et.textContent='';
-    for(let c of txt){ et.textContent+=c; await sleep(80); }
-    try{ const fin=await callConductora(playerNombre+' ganó. Cerrá en 2 oraciones. Sin euforia.'); esub.textContent=fin; hablar(fin,null); }
-    catch(e){ esub.textContent='Diez desafíos.\nNadie había llegado a diez.'; }
-  } else {
-    et.style.color='#ff3030';
-    const txt='GAME  OVER'; et.textContent='';
-    for(let c of txt){ et.textContent+=c; await sleep(80); }
-    try{ const fin=await callConductora(playerNombre+' abandonó en desafío '+instrCount+'/10. Cerrá en 2 oraciones. Sin juicio.'); esub.textContent=fin; hablar(fin,null); }
-    catch(e){ esub.textContent='Desafío '+instrCount+'.\nHasta ahí llegó.'; }
-  }
-}
-
-// ══ INIT
-async function pedirPermisoMic(){
-  if(!navigator.mediaDevices) return;
-  try{ const s=await navigator.mediaDevices.getUserMedia({audio:true}); s.getTracks().forEach(t=>t.stop()); }catch(e){}
-}
-// Cargar EL key si existe
-const savedEL=localStorage.getItem('who_is_el');
-if(savedEL){ EL_API_KEY=savedEL; usandoEL=true; }
-
-if(API_KEY){
-  pedirPermisoMic().then(()=>{
-    if(!savedEL){
-      document.getElementById('el-modal').style.display='flex';
-    } else {
-      showRegistro();
-    }
+async function celebracion30(){
+  return new Promise(resolve=>{
+    const el=document.getElementById('endscreen');
+    const et=document.getElementById('end-title');
+    const esub=document.getElementById('end-sub');
+    el.style.display='flex'; esub.textContent='';
+    const msgs=['DESAFÍO\nCUMPLIDO','10 / 10','WHO IS','GUITARRA\nEXPERIMENTAL'];
+    let m=0; playVictoryJingle();
+    const iv=setInterval(()=>{
+      et.textContent=msgs[m%msgs.length];
+      et.style.fontSize=(Math.random()*30+28)+'px';
+      et.style.color=m%2===0?'#ffb000':'#ffd060';
+      m++;
+    },900);
+    setTimeout(()=>{ clearInterval(iv); el.style.display='none'; resolve(); },30000);
   });
-} else {
-  document.getElementById('apimodal').style.display='flex';
 }
-</script>
-</body>
-</html>
+
+
