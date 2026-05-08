@@ -131,6 +131,16 @@ body{animation:flicker 9s infinite;}
   </div>
 </div>
 
+<div id="el-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.96);align-items:center;justify-content:center;z-index:999;">
+  <div style="border:2px solid #ffb000;padding:44px;max-width:580px;width:92%;background:#000;">
+    <h2 style="font-size:12px;letter-spacing:0.1em;color:#ffb000;margin-bottom:24px;line-height:2;">>> VOZ — ELEVENLABS</h2>
+    <p style="font-size:10px;color:#ffb000;line-height:2.8;margin-bottom:24px;font-family:monospace;">Ingresá tu API key de ElevenLabs.<br>La clave queda guardada en tu navegador.</p>
+    <input id="el-input" type="password" placeholder="sk_..." spellcheck="false" style="width:100%;background:#0a0800;border:2px solid #ffb000;color:#ffb000;font-family:monospace;font-size:14px;padding:14px;margin-bottom:14px;outline:none;"/>
+    <button onclick="saveEL()" style="width:100%;height:54px;background:transparent;border:2px solid #ffb000;cursor:pointer;font-family:'Press Start 2P',monospace;font-size:10px;letter-spacing:0.12em;color:#ffb000;text-transform:uppercase;">[ GUARDAR Y CONTINUAR ]</button>
+    <button onclick="skipEL()" style="width:100%;height:44px;background:transparent;border:1px solid #3a2a00;cursor:pointer;font-family:'Press Start 2P',monospace;font-size:8px;color:#7a5200;text-transform:uppercase;margin-top:10px;">[ USAR VOZ DEL SISTEMA ]</button>
+  </div>
+</div>
+
 <div id="regmodal">
   <div id="regbox">
     <h2>>> REGISTRO DEL JUGADOR</h2>
@@ -220,7 +230,12 @@ async function saveKey(){
   if(!val.startsWith('sk-')||val.length<20){ document.getElementById('api-err').style.display='block'; return; }
   API_KEY=val; localStorage.setItem('who_is_v1',val);
   document.getElementById('apimodal').style.display='none';
-  await pedirPermisoMic(); showRegistro();
+  await pedirPermisoMic();
+  if(!localStorage.getItem('who_is_el')){
+    document.getElementById('el-modal').style.display='flex';
+  } else {
+    showRegistro();
+  }
 }
 
 // ══ MIC PERMISO
@@ -247,42 +262,139 @@ function confirmarRegistro(){
   startApp();
 }
 
-// ══ VOZ — PAULINA
+// ══ VOZ — ELEVENLABS + PAULINA FALLBACK
+const EL_VOICE_ID='LBZahKjme9Rf3qvNwyEL';
+let EL_API_KEY='';
 let vozDisponible=false, vozPaulina=null;
+let usandoEL=false;
 function initVoz(){
   if(!('speechSynthesis' in window)) return;
   vozDisponible=true;
   const elegir=()=>{
     const voces=window.speechSynthesis.getVoices();
-    vozPaulina=voces.find(v=>v.name==='Paulina')
-      ||voces.find(v=>v.lang.startsWith('es')&&/female|paulina|monica|laura|sara/i.test(v.name))
+    vozPaulina=voces.find(v=>v.name==='Isabela')
+      ||voces.find(v=>v.name==='Isabella')
+      ||voces.find(v=>v.name.toLowerCase().includes('isabela'))
+      ||voces.find(v=>v.lang==='es-AR')
+      ||voces.find(v=>v.name==='Flo')
+      ||voces.find(v=>v.name==='Paulina')
       ||voces.find(v=>v.lang.startsWith('es'));
+    console.log('Voz elegida:', vozPaulina?.name, vozPaulina?.lang);
   };
   if(window.speechSynthesis.getVoices().length) elegir();
   else window.speechSynthesis.onvoiceschanged=elegir;
 }
-function hablar(texto, onEnd){
+
+// ElevenLabs
+function saveEL(){
+  const val=document.getElementById('el-input').value.trim();
+  if(!val){ return; }
+  EL_API_KEY=val; usandoEL=true;
+  localStorage.setItem('who_is_el',val);
+  document.getElementById('el-modal').style.display='none';
+  showRegistro();
+}
+function skipEL(){
+  usandoEL=false;
+  document.getElementById('el-modal').style.display='none';
+  showRegistro();
+}
+
+async function hablarEL(texto, onEnd){
+  document.getElementById('voz-ind').textContent='>> HABLANDO'; document.getElementById('voz-ind').className='voz-on';
+  try {
+    const r=await fetch('https://api.elevenlabs.io/v1/text-to-speech/'+EL_VOICE_ID+'/stream',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','xi-api-key':EL_API_KEY},
+      body:JSON.stringify({text:texto,model_id:'eleven_multilingual_v2',voice_settings:{stability:0.5,similarity_boost:0.75}})
+    });
+    if(!r.ok) throw new Error('EL error');
+    const blob=await r.blob();
+    const url=URL.createObjectURL(blob);
+    const audio=new Audio(url);
+    audio.onended=()=>{ URL.revokeObjectURL(url); document.getElementById('voz-ind').textContent='>> LISTA'; document.getElementById('voz-ind').className=''; if(onEnd) onEnd(); };
+    audio.onerror=()=>{ document.getElementById('voz-ind').textContent='>> LISTA'; document.getElementById('voz-ind').className=''; if(onEnd) onEnd(); };
+    audio.play();
+  } catch(e) {
+    // Fallback a voz del sistema
+    hablarSistema(texto, onEnd);
+  }
+}
+
+function hablarSistema(texto, onEnd){
   if(!vozDisponible||!texto){ if(onEnd) onEnd(); return; }
   window.speechSynthesis.cancel();
   const utt=new SpeechSynthesisUtterance(texto);
-  utt.lang='es-AR'; utt.rate=0.88; utt.pitch=1.05;
+  utt.lang='es-AR'; utt.rate=0.75; utt.pitch=1.02;
   if(vozPaulina) utt.voice=vozPaulina;
-  document.getElementById('voz-ind').textContent='>> HABLANDO'; document.getElementById('voz-ind').className='voz-on';
   utt.onend=utt.onerror=()=>{ document.getElementById('voz-ind').textContent='>> LISTA'; document.getElementById('voz-ind').className=''; if(onEnd) onEnd(); };
   window.speechSynthesis.speak(utt);
 }
-function detenerVoz(){ if(vozDisponible) window.speechSynthesis.cancel(); }
+
+function hablar(texto, onEnd){
+  if(!texto){ if(onEnd) onEnd(); return; }
+  document.getElementById('voz-ind').textContent='>> HABLANDO'; document.getElementById('voz-ind').className='voz-on';
+  if(usandoEL && EL_API_KEY) hablarEL(texto, onEnd);
+  else hablarSistema(texto, onEnd);
+}
+
+function detenerVoz(){
+  if(vozDisponible) window.speechSynthesis.cancel();
+}
 
 // ══ RECONOCIMIENTO DE VOZ
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 let recognition=null, micCallback=null, micTranscript='', micTimer=null;
 function initMic(){
   if(!SR){ document.getElementById('voz-ind').textContent='>> NO DISPONIBLE'; return; }
-  recognition=new SR(); recognition.lang='es-AR'; recognition.continuous=true; recognition.interimResults=true;
-  recognition.onstart=()=>{ document.getElementById('voz-ind').textContent='>> ACTIVO'; document.getElementById('voz-ind').className='mic-on'; };
-  recognition.onresult=(e)=>{ let final=''; for(let i=e.resultIndex;i<e.results.length;i++){ if(e.results[i].isFinal) final+=e.results[i][0].transcript; } if(final&&micCallback){ const cb=micCallback; micCallback=null; clearTimeout(micTimer); cb(final.trim()); } };
-  recognition.onend=()=>{ try{ recognition.start(); }catch(e){} };
-  recognition.onerror=(e)=>{ if(e.error==='no-speech'||e.error==='aborted') return; };
+  
+  function crearRecognition(){
+    const r=new SR();
+    r.lang='es-AR';
+    r.continuous=true;
+    r.interimResults=true;
+    r.maxAlternatives=1;
+
+    r.onstart=()=>{ document.getElementById('voz-ind').textContent='>> ACTIVO'; document.getElementById('voz-ind').className='mic-on'; };
+
+    r.onresult=(e)=>{
+      let interim='', final='';
+      for(let i=e.resultIndex;i<e.results.length;i++){
+        if(e.results[i].isFinal) final+=e.results[i][0].transcript;
+        else interim+=e.results[i][0].transcript;
+      }
+      // Mostrar interim en pantalla para que Martín vea que lo escucha
+      if(interim) setStatus('escuchando: '+interim.slice(-40));
+      if(final.trim() && micCallback){
+        const txt=final.trim();
+        // Esperar 1.5s por si sigue hablando
+        clearTimeout(micTimer);
+        micTimer=setTimeout(()=>{
+          if(micCallback){
+            const cb=micCallback; micCallback=null;
+            setStatus('...');
+            cb(txt);
+          }
+        },1500);
+      }
+    };
+
+    r.onend=()=>{
+      // Reiniciar automáticamente
+      setTimeout(()=>{ try{ r.start(); }catch(e){ recognition=crearRecognition(); try{ recognition.start(); }catch(e2){} } },200);
+    };
+
+    r.onerror=(e)=>{
+      if(e.error==='no-speech') return;
+      if(e.error==='aborted') return;
+      // Para otros errores, reiniciar después de un segundo
+      setTimeout(()=>{ try{ r.start(); }catch(e2){} },1000);
+    };
+
+    return r;
+  }
+
+  recognition=crearRecognition();
   try{ recognition.start(); }catch(e){}
   document.getElementById('voz-ind').textContent='>> ACTIVO';
 }
@@ -410,8 +522,8 @@ function showBox(name){ ['dialog-box','tarjeta-box'].forEach(b=>document.getElem
 async function showText(text,speed=25,leer=true){
   showBox('dialog-box');
   const el=document.getElementById('dialog-text');
-  el.style.transition='opacity 0.4s ease'; el.style.opacity='0'; await sleep(400); el.textContent=''; el.style.opacity='1'; await sleep(150);
-  if(leer){ hablar(text,null); const spd=Math.max(22,Math.floor(text.length*45/text.length)); for(let i=0;i<text.length;i++){ el.textContent+=text[i]; await sleep(text[i]==='.'||text[i]==='?'||text[i]==='!'?spd*4:text[i]===','?spd*2:spd); } await sleep(600); }
+  el.style.transition='opacity 0.6s ease'; el.style.opacity='0'; await sleep(800); el.textContent=''; el.style.opacity='1'; await sleep(400);
+  if(leer){ hablar(text,null); const spd=Math.max(28,Math.floor(text.length*50/text.length)); for(let i=0;i<text.length;i++){ el.textContent+=text[i]; await sleep(text[i]==='.'||text[i]==='?'||text[i]==='!'?spd*5:text[i]===','?spd*3:spd); } await sleep(1200); }
   else{ for(let i=0;i<text.length;i++){ el.textContent+=text[i]; await sleep(speed); } }
 }
 function clearDialog(){ const el=document.getElementById('dialog-text'); el.style.opacity='0'; setTimeout(()=>{ el.textContent=''; el.style.opacity='1'; },300); }
@@ -422,7 +534,7 @@ function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 // ══ API
 let convHistory=[];
 function getSysConductora(){
-  return 'Sos Paulina, una conductora de game show sofisticada, cálida y con humor ácido. Tu nombre es Paulina.'+
+  return 'Sos La Doctora Luppi, conductora de game show sofisticada, cálida y con humor ácido. Tu nombre es La Doctora Luppi.'+
   '\nConductos a '+playerNombre+' (toca '+playerInstrumento+') en "WHO IS — Guitarra Experimental" en Vuestra Merce, Mar del Plata.'+
   '\nTono: conversacional, humor ácido pero cordial. Español rioplatense. Genuinamente curiosa.'+
   '\nMáximo 2 oraciones cortas. Máximo 10 palabras cada una. Sin describir acciones físicas tuyas.';
@@ -541,49 +653,71 @@ function getSysTarjeta(){
 function getSecuenciaFija(n){
   const fijas={
     1:[
-      {texto:'Inhalá profundamente.',pausa:10},
-      {texto:'Tocá el inicio de algo que conozcas. Modo mayor. Cuando exhalés, silencio.',pausa:30},
-      {texto:'Inhalá y dejá caer la guitarra. Pausa.',pausa:20},
-      {texto:'Grito de desesperación tomándote la cara.',pausa:10},
+      {texto:'Inhalá profundamente. Tocá algo que nos recuerde a que alguna vez hubo un lenguaje musical.',pausa:25},
+      {texto:'Inhalá de nuevo. Tocá algo que nos recuerde a que alguna vez hubo un lenguaje musical.',pausa:25},
+      {texto:'Inhalá. Ahora improvisá.',pausa:30},
+      {texto:'Cuando exhalés, dejá caer la guitarra.',pausa:8},
+      {texto:'Gritá.',pausa:10},
+      {texto:'',pausa:10,silencioMusica:true},
     ],
     2:[
       {texto:'Metá la boca en la guitarra. Gritá. Mandá mensajes a los ríos y mares.',pausa:35},
-      {texto:'Silbato gorrión. Luego silbato bandada. Respuesta del mundo.',pausa:20},
-      {texto:'Gestos veloces con la guitarra.',pausa:20},
-      {texto:'Lentamente, salir. Quietud.',pausa:20},
+      {texto:'Silbato gorrión. Luego silbato bandada.',pausa:20},
+      {texto:'Apoyá la guitarra. Limpiala con un trapo húmedo. Secala con cuidado.',pausa:30},
+      {texto:'Cuando termines, tocá el final de una canción para los ríos.',pausa:50},
+      {texto:'Gracias.',pausa:3},
+      {texto:'Silencio.',pausa:5},
     ],
     3:[
-      {texto:'Silbato búho dentro de la guitarra. Escuchá.',pausa:20},
-      {texto:'Pasan pájaros en bandadas. Silbato bandada, repetido.',pausa:20},
-      {texto:'Metá la boca en la guitarra. Cantá.',pausa:25},
-      {texto:'Silbato búho otra vez.',pausa:15},
-      {texto:'Tirá tres monedas dentro de la guitarra. Escuchá cómo caen.',pausa:15},
+      {texto:'Apoyá la guitarra en la mesa.',pausa:8},
+      {texto:'Silbato búho.',pausa:12},
+      {texto:'Silbato cucú.',pausa:12},
+      {texto:'Silbato golondrina.',pausa:12},
+      {texto:'Tirá una pluma dentro de la guitarra.',pausa:15},
+      {texto:'Decí dentro de la guitarra el nombre de un pájaro que querés recordar.',pausa:20},
+      {texto:'Tomá la guitarra. Tocá el gesto del viento.',pausa:20},
+      {texto:'FIN.',pausa:5,grito:true},
     ],
     4:[
+      {texto:'Apoyá la guitarra en la mesa.',pausa:8},
       {texto:'Desatornillá el clavijero. No toques. Porque no podés.',pausa:25},
       {texto:'Mientras desatornillás, cantá una melodía antigua.',pausa:35},
-      {texto:'Silbato búho. Una vez.',pausa:15},
-      {texto:'Tocá algo minimalista. Una nota, o dos.',pausa:30},
+      {texto:'Mirá cómo quedó la guitarra. Pensá en lo que estás haciendo.',pausa:20},
+      {texto:'Cuando termines, tocá un silbato agudo.',pausa:15},
+      {texto:'Repará la guitarra. Tocá ataques politímbricos usando el clavijero.',pausa:35},
     ],
-    5:null, // generado por IA con situación de diálogo
+    5:[
+      {texto:'Frotar la guitarra contra el suelo en círculos.',pausa:20},
+      {texto:'No dejes de arrastrarla en círculos.',pausa:5,dialogo:true},
+      {texto:'Detente. Pensá si dañaste el instrumento.',pausa:15},
+      {texto:'Respondele algo a la guitarra mientras tocás el silbato pato.',pausa:25},
+      {texto:'Limpiá la guitarra con cuidado.',pausa:20},
+    ],
     6:[
-      {texto:'Vertí agua dentro de la guitarra. Despacio.',pausa:20},
-      {texto:'Caminá por el espacio mientras tocás. El agua se mueve.',pausa:35},
-      {texto:'Susurrále al agua sobre la ley de glaciares, el Ártico, el río Colorado. Sé específico. Silencio del instrumento.',pausa:30},
-      {texto:'Silbato gaviota. Largo. Como viento.',pausa:15},
-      {texto:'Incliná la guitarra. Que el agua busque otro lugar.',pausa:25},
+      {texto:'Apoyá la guitarra en la mesa.',pausa:8},
+      {texto:'Vertí agua dentro de la guitarra. Despacio.',pausa:25},
+      {texto:'Hacé que escuchemos el agua.',pausa:30},
+      {texto:'Caminá por el espacio mientras tocás. El agua se mueve adentro.',pausa:45},
+      {texto:'Susurrále al agua sobre la ley de glaciares, el Ártico, el río Colorado. Silencio del instrumento.',pausa:35},
+      {texto:'Silbato gaviota. Largo.',pausa:20},
+      {texto:'Incliná la guitarra. Que el agua busque otro lugar.',pausa:30},
     ],
     7:[
       {texto:'Desagotá el agua. Despacio.',pausa:20},
-      {texto:'Pegale los piezos eléctricos. Generá un patrón rítmico.',pausa:30},
-      {texto:'Bailá.',pausa:25},
-      {texto:'Hacele RCP a la guitarra.',pausa:20},
-      {texto:'Silbato ruiseñor. Resucitó.',pausa:15},
+      {texto:'Pegale los piezos eléctricos. Generá un patrón rítmico.',pausa:45},
+      {texto:'Bailá.',pausa:30},
+      {texto:'Hacele RCP a la guitarra.',pausa:25},
+      {texto:'Asustate.',pausa:5,grito:true,textoGrito:'Martín, más fuerte. La guitarra se muere.'},
+      {texto:'',pausa:8,silencioMusica:true},
+      {texto:'La guitarra resucitó.',pausa:5},
+      {texto:'Silbato ruiseñor.',pausa:20},
     ],
     8:[
-      {texto:'Cortá un pedazo de la guitarra con el serrucho.',pausa:35},
-      {texto:'Mientras cortás, cantá una canción de cuna.',pausa:35},
-      {texto:'Sacá una cuerda. Golpeate.',pausa:15},
+      {texto:'Tomá la sierra. Cortá un pedazo de la guitarra.',pausa:40},
+      {texto:'Cantá mientras cortás.',pausa:40},
+      {texto:'Sacá una cuerda.',pausa:60},
+      {texto:'Golpeate con la cuerda.',pausa:40},
+      {texto:'Lo siento. Es un desafío ruin.',pausa:10},
     ],
     9:[
       {texto:'Rociá el mástil con bencina. Con elegancia. Como si prepararas un martini.',pausa:20},
@@ -591,7 +725,7 @@ function getSecuenciaFija(n){
       {texto:'Percutí los hielos en el interior.',pausa:30},
       {texto:'Improvisá pasos de salsa mientras percutís.',pausa:25},
       {texto:'Tararéa lo que entiendas que significa música latina.',pausa:30},
-      {texto:'Silbato tordo. Tres veces. Ritual.',pausa:15},
+      {texto:'Silbato tordo. Tres veces.',pausa:15},
     ],
     10:[
       {texto:'Atate la guitarra al cuerpo con cinta. Que no puedas soltarla.',pausa:25},
@@ -624,12 +758,21 @@ let desafioEnCurso=false, tarjetaActual=null;
 async function startApp(){
   initVoz(); initAudio(); initMic(); await sleep(800);
   setBtns(''); setStatus('...');
-  // Paulina se presenta
+
+  // Apertura fija — con pausas entre oraciones
+  await showText('Buenas noches, amigos y amigas de la bohemia, la poesía y el dancing con un traguito en la mano...');
+  await sleep(1600);
+  await showText('Bienvenidos a Vuestra Merce, el último reducto del under en Mar del Plata.');
+  await sleep(1400);
+  await showText('Bueno, también está Casa Taller, ojo. Pero ya, ahí es para bardo bardo.');
+  await sleep(1600);
+
+  // La Doctora Luppi se presenta y nombra al músico
   try {
-    const bienvenida=await callConductora('Presentate como Paulina, la anfitriona de "WHO IS — Guitarra Experimental". Saludá al público y a '+playerNombre+'. Decí que vas a ser la anfitriona esta noche. Sé cálida y con personalidad.');
-    await showText(bienvenida);
+    const presentacion=await callConductora('Presentate como La Doctora Luppi. Nombrá a '+playerNombre+' y su instrumento, el '+playerInstrumento+'. Una o dos oraciones con humor y personalidad.');
+    await showText(presentacion);
   } catch(e){
-    await showText('Buenas noches. Soy Paulina, y esta noche soy su anfitriona.\n'+playerNombre+', bienvenido a WHO IS.');
+    await showText('Con ustedes... La Doctora Luppi.\n'+playerNombre+', esta noche sos nuestro músico.');
   }
   await hacerPregunta('inicio');
 }
@@ -648,14 +791,14 @@ async function hacerPregunta(ctx){
 async function procesarRespuesta(resp){
   setBtns(''); setStatus('...');
   if(preguntasRonda>=2){
-    await sleep(500);
+    await sleep(900);
     try{ const c=await callConductora(playerNombre+' respondió: "'+resp+'". Cerrá con humor cordial en 1 oración. Luego preguntá si está listo para el desafío.'); await showText(c); }
     catch(e){ await showText('Perfecto. ¿Arrancamos?'); }
     setBtns('<button class="btn btn-yes" onclick="iniciarDesafio()">[ EMPEZAR DESAFÍO ]</button><button class="btn" onclick="unaPreguntas()" style="font-size:7px;border-color:#7a5200;color:#7a5200">[ UNA MÁS ]</button>');
     micCallback=(t)=>{ if(t&&/sí|si|listo|empezar|dale|vamos/i.test(t)) iniciarDesafio(); };
     setStatus('¿LISTO?');
   } else {
-    await sleep(500);
+    await sleep(900);
     try{ const r=await callConductora(playerNombre+' respondió: "'+resp+'". Reaccioná con humor cordial en 1 oración.'); await showText(r); }
     catch(e){ await showText('Anotado.'); }
     await sleep(500);
@@ -726,34 +869,50 @@ async function ejecutarSecuencia(secuencia){
     const esUltima=i===secuencia.length-1;
     document.getElementById('tarjeta-fase').textContent='>> '+(i+1)+' / '+secuencia.length+(esUltima?' — CIERRE':'');
     document.getElementById('tarjeta-progreso').textContent='DESAFÍO '+instrCount+' / '+MAX;
-    const el=document.getElementById('tarjeta-texto');
-    el.style.transition='opacity 0.5s ease'; el.style.opacity='0'; await sleep(400); el.textContent=''; el.style.opacity='1'; await sleep(200);
-    hablar(item.texto,null);
-    for(let j=0;j<item.texto.length;j++){ el.textContent+=item.texto[j]; await sleep(item.texto[j]==='.'||item.texto[j]==='!'||item.texto[j]==='?'?100:item.texto[j]===','?60:38); }
+
+    if(item.silencioMusica) stopSounds();
+
+    const textoMostrar=item.textoGrito||item.texto;
+    if(textoMostrar){
+      const el=document.getElementById('tarjeta-texto');
+      el.style.transition='opacity 0.6s ease'; el.style.opacity='0'; await sleep(700);
+      el.textContent=''; el.style.opacity='1'; await sleep(400);
+      hablar(textoMostrar,null);
+      for(let j=0;j<textoMostrar.length;j++){
+        el.textContent+=textoMostrar[j];
+        const c=textoMostrar[j];
+        await sleep(c==='.'||c==='!'||c==='?'?100:c===','?60:38);
+      }
+    }
+
+    if(item.dialogo){
+      const sits=['La guitarra tiene algo que decirte sobre esta noche. Hablá por ella.','La guitarra opina sobre lo que pasa en el mundo. Vos la expresás.','La guitarra quiere pedirte algo. Vos lo decís.'];
+      const sit=sits[Math.floor(Math.random()*sits.length)];
+      try{ const d=await callConductora(sit+' Una oración.'); hablar(d,null); }catch(e){}
+    }
+
+    const pausaMs=(item.pausa||15)*1000;
     if(esUltima){
-      await sleep((item.pausa||15)*1000);
+      await sleep(pausaMs);
       desafioEnCurso=false;
       await sleep(600);
-      // Desafíos 8, 9, 10 — público decide con aplausos
-      if(instrCount>=8){
-        stopSounds();
-        if(instrCount===9){
-          await mostrarAplausos('¿El público cree que '+playerNombre+' superó este desafío?\nAplaudan si la respuesta es sí.', true);
-        } else {
-          await mostrarAplausos('¿El público cree que '+playerNombre+' superó este desafío?\nAplaudan si la respuesta es sí.', false);
-        }
+      stopSounds();
+      if(instrCount===8){
+        showBox('dialog-box');
+        try{ const com=await callConductora('Cerrá el desafío 8 con una sola oración. Sin juicio.'); await showText(com); }
+        catch(e){ await showText('Fin del desafío 8.'); }
+        mostrarEvaluacion();
+      } else if(instrCount>=9){
+        await mostrarAplausos('¿El público cree que '+playerNombre+' superó este desafío? Aplaudan si la respuesta es sí.', instrCount===9);
       } else {
-        // Desafíos 1-7 — evaluación propia
-        stopSounds();
         showBox('dialog-box');
         try{ const com=await callConductora(playerNombre+' completó el desafío '+instrCount+'/10. Comentá con humor cálido en 1 oración.'); await showText(com); }
         catch(e){ await showText('Desafío '+instrCount+' completo.'); }
         mostrarEvaluacion();
       }
     } else {
-      const pausaMs=(item.pausa||20)*1000;
       const inicio=Date.now();
-      const iv=setInterval(()=>{ const r=Math.ceil((pausaMs-(Date.now()-inicio))/1000); if(r>0) setStatus('tocando... '+r+'s'); else clearInterval(iv); },1000);
+      const iv=setInterval(()=>{ const r=Math.ceil((pausaMs-(Date.now()-inicio))/1000); if(r>0) setStatus(r+'s'); else clearInterval(iv); },1000);
       await sleep(pausaMs); clearInterval(iv);
     }
   }
@@ -810,8 +969,21 @@ async function pedirPermisoMic(){
   if(!navigator.mediaDevices) return;
   try{ const s=await navigator.mediaDevices.getUserMedia({audio:true}); s.getTracks().forEach(t=>t.stop()); }catch(e){}
 }
-if(API_KEY){ pedirPermisoMic().then(()=>showRegistro()); }
-else{ document.getElementById('apimodal').style.display='flex'; }
+// Cargar EL key si existe
+const savedEL=localStorage.getItem('who_is_el');
+if(savedEL){ EL_API_KEY=savedEL; usandoEL=true; }
+
+if(API_KEY){
+  pedirPermisoMic().then(()=>{
+    if(!savedEL){
+      document.getElementById('el-modal').style.display='flex';
+    } else {
+      showRegistro();
+    }
+  });
+} else {
+  document.getElementById('apimodal').style.display='flex';
+}
 </script>
 </body>
 </html>
