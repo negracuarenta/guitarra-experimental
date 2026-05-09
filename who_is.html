@@ -498,6 +498,28 @@ function playFeldman(){
 }
 
 // ══ SONIDOS VARIOS
+function playFlatline(){
+  initAudio(); stopSounds();
+  const master=audioCtx.createGain(); master.gain.setValueAtTime(0.2,audioCtx.currentTime); master.connect(audioCtx.destination);
+  const osc=audioCtx.createOscillator(); const env=audioCtx.createGain();
+  osc.type='sine'; osc.frequency.setValueAtTime(440,audioCtx.currentTime);
+  env.gain.setValueAtTime(0.8,audioCtx.currentTime);
+  osc.connect(env); env.connect(master); osc.start(); currentNodes.push(osc);
+  document.getElementById('sound-ind').textContent='>> FLATLINE'; document.getElementById('sound-ind').className='sound-on';
+}
+function playPulso(){
+  initAudio(); stopSounds();
+  const master=audioCtx.createGain(); master.gain.setValueAtTime(0.18,audioCtx.currentTime); master.connect(audioCtx.destination);
+  const sentinel={stop:()=>{}}; currentNodes.push(sentinel);
+  let t=audioCtx.currentTime;
+  for(let i=0;i<30;i++){
+    const o=audioCtx.createOscillator(); const g=audioCtx.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(880,t); o.frequency.setValueAtTime(660,t+0.08);
+    g.gain.setValueAtTime(0.9,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.25);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t+0.3); t+=0.85;
+  }
+  document.getElementById('sound-ind').textContent='>> PULSO'; document.getElementById('sound-ind').className='sound-on';
+}
 function playAlertSound(){
   initAudio(); const master=audioCtx.createGain(); master.gain.setValueAtTime(0.22,audioCtx.currentTime); master.connect(audioCtx.destination);
   let t=audioCtx.currentTime+0.05;
@@ -653,64 +675,60 @@ function getSysTarjeta(){
 function getSecuenciaFija(n){
   const fijas={
     1:[
-      {texto:'Inhalá profundamente. Tocá algo que nos recuerde a que alguna vez hubo un lenguaje musical.',pausa:25},
-      {texto:'Inhalá de nuevo. Tocá algo que nos recuerde a que alguna vez hubo un lenguaje musical.',pausa:25},
-      {texto:'Inhalá. Ahora improvisá.',pausa:30},
-      {texto:'Cuando exhalés, dejá caer la guitarra.',pausa:8},
-      {texto:'Gritá.',pausa:10},
-      {texto:'',pausa:10,silencioMusica:true},
+      {texto:'Inhalá. Tocá algo que recuerde a un lenguaje musical perdido. Sin respirar. Cuando exhalés, silencio.',pausa:22},
+      {texto:'Repetí la acción.',pausa:22},
+      {texto:'Hacelo de nuevo, pero improvisá.',pausa:28},
+      {texto:'Inhalá y dejá caer la guitarra.',pausa:8},
+      {texto:'Gritá.',pausa:10,silencioMusica:true},
     ],
     2:[
       {texto:'Metá la boca en la guitarra. Gritá. Mandá mensajes a los ríos y mares.',pausa:35},
       {texto:'Silbato gorrión. Luego silbato bandada.',pausa:20},
-      {texto:'Apoyá la guitarra. Limpiala con un trapo húmedo. Secala con cuidado.',pausa:30},
-      {texto:'Cuando termines, tocá el final de una canción para los ríos.',pausa:50},
-      {texto:'Gracias.',pausa:3},
-      {texto:'Silencio.',pausa:5},
+      {texto:'Apoyá la guitarra. Limpiala con un trapo húmedo. Secala.',pausa:30},
+      {texto:'Tocá el final de una canción para los ríos. Silbato de pájaro de agua.',pausa:50},
+      {texto:'Gracias. Silencio.',pausa:5,silencioMusica:true},
     ],
     3:[
       {texto:'Apoyá la guitarra en la mesa.',pausa:8},
-      {texto:'Silbato búho.',pausa:12},
-      {texto:'Silbato cucú.',pausa:12},
-      {texto:'Silbato golondrina.',pausa:12},
-      {texto:'Tirá una pluma dentro de la guitarra.',pausa:15},
-      {texto:'Decí dentro de la guitarra el nombre de un pájaro que querés recordar.',pausa:20},
-      {texto:'Tomá la guitarra. Tocá el gesto del viento.',pausa:20},
-      {texto:'FIN.',pausa:5,grito:true},
+      {texto:'Hacé sonar el silbato búho dentro de la boca de la guitarra.',pausa:15},
+      {texto:'Ahora el silbato cucú, también dentro de la guitarra.',pausa:15},
+      {texto:'Ahora el silbato golondrina, dentro de la guitarra.',pausa:15},
+      {texto:'Tirá una pluma dentro de la guitarra.',pausa:12},
+      {texto:'Decí dentro de la guitarra el nombre de un pájaro que querés recordar.',pausa:18,silencioMusica:true},
+      {texto:'Tomá la guitarra. Tocá el gesto del viento.',pausa:22},
+      {texto:'Fin.',pausa:3,silencioMusica:true},
     ],
     4:[
       {texto:'Apoyá la guitarra en la mesa.',pausa:8},
-      {texto:'Desatornillá el clavijero. No toques. Porque no podés.',pausa:25},
+      {texto:'Desatornillá el clavijero.',pausa:25},
       {texto:'Mientras desatornillás, cantá una melodía antigua.',pausa:35},
       {texto:'Mirá cómo quedó la guitarra. Pensá en lo que estás haciendo.',pausa:20},
       {texto:'Cuando termines, tocá un silbato agudo.',pausa:15},
-      {texto:'Repará la guitarra. Tocá ataques politímbricos usando el clavijero.',pausa:35},
+      {texto:'Tocá ataques politímbricos: usá los sonidos detrás del clavijero y detrás del puente.',pausa:35},
     ],
     5:[
-      {texto:'Frotar la guitarra contra el suelo en círculos.',pausa:20},
-      {texto:'No dejes de arrastrarla en círculos.',pausa:5,dialogo:true},
-      {texto:'Detente. Pensá si dañaste el instrumento.',pausa:15},
-      {texto:'Respondele algo a la guitarra mientras tocás el silbato pato.',pausa:25},
-      {texto:'Limpiá la guitarra con cuidado.',pausa:20},
+      {texto:'Frotar la guitarra contra el suelo en círculos.',pausa:20,silencioMusica:true},
+      {texto:'Escuchá a la guitarra. Ella tiene ideas. Traducíselas al público.',pausa:40,dialogo:true,silencioMusica:true},
+      {texto:'Detente. Sentate. Dale un final musical a los pensamientos de la guitarra.',pausa:35},
+      {texto:'Silbato pato.',pausa:15},
     ],
     6:[
       {texto:'Apoyá la guitarra en la mesa.',pausa:8},
       {texto:'Vertí agua dentro de la guitarra. Despacio.',pausa:25},
-      {texto:'Hacé que escuchemos el agua.',pausa:30},
+      {texto:'Hacé que escuchemos el agua.',pausa:35},
       {texto:'Caminá por el espacio mientras tocás. El agua se mueve adentro.',pausa:45},
-      {texto:'Susurrále al agua sobre la ley de glaciares, el Ártico, el río Colorado. Silencio del instrumento.',pausa:35},
+      {texto:'Susurrále al agua sobre la ley de glaciares, el Ártico, el río Colorado.',pausa:35,silencioMusica:true},
       {texto:'Silbato gaviota. Largo.',pausa:20},
-      {texto:'Incliná la guitarra. Que el agua busque otro lugar.',pausa:30},
+      {texto:'Incliná la guitarra. Que el agua busque otro lugar.',pausa:5,silencioMusica:true},
     ],
     7:[
-      {texto:'Desagotá el agua. Despacio.',pausa:20},
-      {texto:'Pegale los piezos eléctricos. Generá un patrón rítmico.',pausa:45},
-      {texto:'Bailá.',pausa:30},
-      {texto:'Hacele RCP a la guitarra.',pausa:25},
-      {texto:'Asustate.',pausa:5,grito:true,textoGrito:'Martín, más fuerte. La guitarra se muere.'},
-      {texto:'',pausa:8,silencioMusica:true},
-      {texto:'La guitarra resucitó.',pausa:5},
-      {texto:'Silbato ruiseñor.',pausa:20},
+      {texto:'Desagotá el agua. Despacio.',pausa:35},
+      {texto:'Pegale los piezos eléctricos. Generá un patrón rítmico.',pausa:55},
+      {texto:'Bailá.',pausa:40},
+      {texto:'Hacele RCP a la guitarra.',pausa:25,flatline:true},
+      {texto:'Martín, más fuerte. La guitarra se muere.',pausa:15,cortarTodo:true},
+      {texto:'La guitarra resucitó.',pausa:10,pulso:true},
+      {texto:'Silbato ruiseñor.',pausa:15},
     ],
     8:[
       {texto:'Tomá la sierra. Cortá un pedazo de la guitarra.',pausa:40},
@@ -720,21 +738,19 @@ function getSecuenciaFija(n){
       {texto:'Lo siento. Es un desafío ruin.',pausa:10},
     ],
     9:[
-      {texto:'Rociá el mástil con bencina. Con elegancia. Como si prepararas un martini.',pausa:20},
-      {texto:'Llená la guitarra con hielo. Despacio. Con el mismo cuidado.',pausa:25},
-      {texto:'Percutí los hielos en el interior.',pausa:30},
-      {texto:'Improvisá pasos de salsa mientras percutís.',pausa:25},
-      {texto:'Tararéa lo que entiendas que significa música latina.',pausa:30},
-      {texto:'Silbato tordo. Tres veces.',pausa:15},
+      {texto:'Rociá el mástil con bencina. Con elegancia. Como si prepararas un martini.',pausa:15},
+      {texto:'Prendé el mástil.',pausa:8,silencioMusica:true},
+      {texto:'Mirá el fuego con cuidado. Esperá a que se rompan las cuerdas.',pausa:40},
+      {texto:'Apagá el fuego.',pausa:10},
+      {texto:'Buscale un nuevo uso a la guitarra. Si no encontrás nada interesante, bailá.',pausa:30},
     ],
     10:[
       {texto:'Atate la guitarra al cuerpo con cinta. Que no puedas soltarla.',pausa:25},
       {texto:'Tocá, o intentá, con ella atada.',pausa:35},
-      {texto:'Tené una charla íntima con la guitarra. Hablá por ella.',pausa:45},
+      {texto:'Tené una charla íntima con la guitarra. Hablá por ella.',pausa:60,silencioMusica:true},
       {texto:'Silbato lechuza. Largo. Sin parar.',pausa:25},
       {texto:'Envolvé la guitarra con toda la cinta que quede.',pausa:30},
       {texto:'De pie. Quieto.',pausa:30},
-      {texto:'I exist as I am, that is enough. Walt Whitman.',pausa:20},
     ],
   };
   return fijas[n]||null;
@@ -871,6 +887,9 @@ async function ejecutarSecuencia(secuencia){
     document.getElementById('tarjeta-progreso').textContent='DESAFÍO '+instrCount+' / '+MAX;
 
     if(item.silencioMusica) stopSounds();
+    if(item.cortarTodo){ stopSounds(); detenerVoz(); }
+    if(item.flatline) playFlatline();
+    if(item.pulso) playPulso();
 
     const textoMostrar=item.textoGrito||item.texto;
     if(textoMostrar){
